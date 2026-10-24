@@ -1262,6 +1262,7 @@ dependencies = [
  "flate2",
  "futures-util",
  "hex",
+ "libc",
  "lzma-rs",
  "pgp",
  "reqwest",

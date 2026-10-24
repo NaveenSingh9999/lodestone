@@ -2,6 +2,9 @@ use std::collections::VecDeque;
 
 use serde::{Deserialize, Serialize};
 
+pub mod runner;
+pub use runner::{InstanceRunner, RunOutcome};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum InstanceState {
@@ -68,6 +71,40 @@ impl CrashTracker {
 
     pub fn reset(&mut self) {
         self.times.clear();
+    }
+}
+
+/// Restart policy for instance supervision (spec §4.4): auto-restart honest
+/// crashes within a window; hold a backoff; never restart after the system
+/// itself killed the process.
+#[derive(Debug, Clone)]
+pub struct InstancePolicy {
+    /// Unique log marker considered the server "ready" (vanilla/paper: `Done (`).
+    pub ready_marker: String,
+    /// Console command sent for a graceful stop (vanilla: `stop`).
+    pub stop_command: String,
+    /// Time allowed for an instance to exit after a graceful stop before
+    /// SIGKILL.
+    pub stop_grace: std::time::Duration,
+    /// Max unexpected crashes within `crash_window` before giving up.
+    pub max_crashes: usize,
+    pub crash_window: std::time::Duration,
+    /// Base restart backoff; doubles per consecutive crash up to `backoff_cap`.
+    pub backoff_initial: std::time::Duration,
+    pub backoff_cap: std::time::Duration,
+}
+
+impl Default for InstancePolicy {
+    fn default() -> Self {
+        InstancePolicy {
+            ready_marker: "Done (".to_string(),
+            stop_command: "stop".to_string(),
+            stop_grace: std::time::Duration::from_secs(30),
+            max_crashes: 3,
+            crash_window: std::time::Duration::from_secs(10 * 60),
+            backoff_initial: std::time::Duration::from_secs(1),
+            backoff_cap: std::time::Duration::from_secs(30),
+        }
     }
 }
 

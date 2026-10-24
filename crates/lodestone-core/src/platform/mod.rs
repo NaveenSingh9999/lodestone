@@ -5,6 +5,9 @@ use tokio::sync::{mpsc, oneshot};
 
 use crate::runtime::RuntimeSource;
 
+pub mod posix;
+pub use posix::PosixPlatform;
+
 #[derive(Debug, Clone)]
 pub struct MemInfo {
     pub total_bytes: u64,
@@ -114,7 +117,7 @@ impl ExitKind {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExitInfo {
     pub code: Option<i32>,
     pub signal: Option<u8>,
