@@ -8,19 +8,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-      - uses: android-actions/setup-android@v3
-      - name: Grant gradlew (if present)
+      - name: Accept SDK licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null 2>&1 || true
+      - name: Install platform 34 + build-tools
         run: |
-          if [ -f android/gradlew ]; then chmod +x android/gradlew; fi
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0" 2>&1 | tail -5
       - name: Build Android app
-        uses: gradle/gradle-build-action@v3
-        with:
-          build-root-directory: android
-          gradle-version: 8.9
-          arguments: assembleDebug --stacktrace
+        working-directory: android
+        run: |
+          gradle assembleDebug --stacktrace --offline 2>&1 | tail -40 || gradle assembleDebug --stacktrace 2>&1 | tail -40
