@@ -158,12 +158,11 @@ impl<H: HttpClient> Provider for VanillaProvider<H> {
             .map_err(|e| CatalogError::Source(format!("mkdir {}: {e}", dir.display())))?;
         let dest = dir.join(&artifact.file_name);
 
-        if dest.exists() {
-            if let Some(checksum) = &artifact.checksum {
-                if checksum.verify_file(&dest).await.is_ok() {
-                    return Ok(());
-                }
-            }
+        if dest.exists()
+            && let Some(checksum) = &artifact.checksum
+            && checksum.verify_file(&dest).await.is_ok()
+        {
+            return Ok(());
         }
 
         self.client.download(&artifact.url, &dest).await?;

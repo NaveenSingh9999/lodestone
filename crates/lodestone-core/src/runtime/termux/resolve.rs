@@ -114,28 +114,24 @@ fn visit(
         let atom = pick(index, group).ok_or_else(|| ResolveError {
             message: format!(
                 "no alternative of dependency of {name} is in the index: {}",
-                group
-                    .iter()
-                    .map(|a| dep_label(a))
-                    .collect::<Vec<_>>()
-                    .join(" | ")
+                group.iter().map(dep_label).collect::<Vec<_>>().join(" | ")
             ),
         })?;
 
         // consistency: must agree with an already-chosen version
-        if let Some(prev) = chosen.get(&atom.name) {
-            if !atom.is_satisfied(prev) {
-                return Err(ResolveError {
-                    message: format!(
-                        "version conflict while resolving {name}: {atom_name} is pinned to {} but {prev} was chosen",
-                        atom.constraint
-                            .as_ref()
-                            .map(|(_, v)| v.clone())
-                            .unwrap_or_default(),
-                        atom_name = atom.name
-                    ),
-                });
-            }
+        if let Some(prev) = chosen.get(&atom.name)
+            && !atom.is_satisfied(prev)
+        {
+            return Err(ResolveError {
+                message: format!(
+                    "version conflict while resolving {name}: {atom_name} is pinned to {} but {prev} was chosen",
+                    atom.constraint
+                        .as_ref()
+                        .map(|(_, v)| v.clone())
+                        .unwrap_or_default(),
+                    atom_name = atom.name
+                ),
+            });
         }
         if let Some(reason) = skip_reason(&atom.name) {
             if !visited.contains_key(&atom.name) {
@@ -160,7 +156,7 @@ fn dep_label(a: &DepAtom) -> String {
 
 /// Choose, among a comma-item's OR alternatives, the first that exists in the
 /// index and satisfies its own version constraint (when any).
-fn pick<'x>(index: &BTreeMap<String, PackageEntry>, group: &'x [DepAtom]) -> Option<DepAtom> {
+fn pick(index: &BTreeMap<String, PackageEntry>, group: &[DepAtom]) -> Option<DepAtom> {
     let mut first_missing: Option<&DepAtom> = None;
     for atom in group {
         match index.get(&atom.name) {

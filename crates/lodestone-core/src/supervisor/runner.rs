@@ -176,16 +176,16 @@ impl InstanceRunner {
 
             // ---- live-until-exit ------------------------------------------------
             let end: AttemptEnd = loop {
-                if let Some(deadline) = overall_deadline {
-                    if started.elapsed() > deadline {
-                        handle.kill();
-                        return Ok(RunReport {
-                            phases,
-                            restarts,
-                            outcome: RunOutcome::TimedOut,
-                            tail: tail.into(),
-                        });
-                    }
+                if let Some(deadline) = overall_deadline
+                    && started.elapsed() > deadline
+                {
+                    handle.kill();
+                    return Ok(RunReport {
+                        phases,
+                        restarts,
+                        outcome: RunOutcome::TimedOut,
+                        tail: tail.into(),
+                    });
                 }
 
                 let stop_requested = stop_requested_after.is_some() && !stopping;

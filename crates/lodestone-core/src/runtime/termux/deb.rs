@@ -42,7 +42,7 @@ fn parse_ar_members(reader: &mut impl Read) -> Result<Vec<ArMember>, String> {
     loop {
         let mut header = [0u8; 60];
         let header = match reader.read(&mut header) {
-            Ok(n) if n == 60 => header,
+            Ok(60) => header,
             Ok(0) => break, // clean EOF
             Ok(n) => {
                 if header[..n].iter().all(|c| c.is_ascii_whitespace()) {

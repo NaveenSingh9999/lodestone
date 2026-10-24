@@ -32,7 +32,7 @@ fn merge_adds_without_duplicates() {
     a.merge(["h1.example", "h2.example"]);
     assert!(a.is_allowed("h1.example"));
     assert!(a.is_allowed("h2.example"));
-    assert_eq!(a.contains("h2.example"), true);
+    assert!(a.contains("h2.example"));
 }
 
 #[test]

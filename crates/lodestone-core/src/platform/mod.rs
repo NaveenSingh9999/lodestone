@@ -237,14 +237,14 @@ pub fn validate_launch_spec(spec: &LaunchSpec) -> Result<(), String> {
     } else {
         spec.work_dir.join(&spec.jar)
     };
-    if let Some(parent) = jar.parent() {
-        if !parent.starts_with(&spec.work_dir) {
-            return Err(format!(
-                "server jar {} is outside the instance directory {}",
-                jar.display(),
-                spec.work_dir.display()
-            ));
-        }
+    if let Some(parent) = jar.parent()
+        && !parent.starts_with(&spec.work_dir)
+    {
+        return Err(format!(
+            "server jar {} is outside the instance directory {}",
+            jar.display(),
+            spec.work_dir.display()
+        ));
     }
     Ok(())
 }

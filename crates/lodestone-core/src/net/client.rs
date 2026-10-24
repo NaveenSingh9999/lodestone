@@ -78,10 +78,10 @@ impl HttpsClient {
                 resp.status().as_u16()
             )));
         }
-        if let Some(len) = resp.content_length() {
-            if len > MAX_TRANSFER_BYTES {
-                return Err(NetError::TooLarge);
-            }
+        if let Some(len) = resp.content_length()
+            && len > MAX_TRANSFER_BYTES
+        {
+            return Err(NetError::TooLarge);
         }
         Ok(resp)
     }

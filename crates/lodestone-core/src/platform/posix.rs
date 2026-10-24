@@ -61,14 +61,14 @@ fn build_command(spec: &LaunchSpec) -> Result<Command, String> {
     } else {
         spec.work_dir.join(&spec.jar)
     };
-    if let Some(parent) = jar.parent() {
-        if !parent.starts_with(&spec.work_dir) {
-            return Err(format!(
-                "server jar {} is outside the instance directory {}",
-                jar.display(),
-                spec.work_dir.display()
-            ));
-        }
+    if let Some(parent) = jar.parent()
+        && !parent.starts_with(&spec.work_dir)
+    {
+        return Err(format!(
+            "server jar {} is outside the instance directory {}",
+            jar.display(),
+            spec.work_dir.display()
+        ));
     }
 
     let mut command = Command::new(&java);
@@ -201,10 +201,10 @@ impl crate::platform::Platform for PosixPlatform {
                 }
                 core_count += 1;
                 let freq_path = entry.path().join("cpufreq/cpuinfo_max_freq");
-                if let Ok(text) = std::fs::read_to_string(&freq_path) {
-                    if let Ok(khz) = text.trim().parse::<u32>() {
-                        max_freq = max_freq.max(khz / 1000);
-                    }
+                if let Ok(text) = std::fs::read_to_string(&freq_path)
+                    && let Ok(khz) = text.trim().parse::<u32>()
+                {
+                    max_freq = max_freq.max(khz / 1000);
                 }
             }
         }
@@ -218,11 +218,11 @@ impl crate::platform::Platform for PosixPlatform {
         let mut hottest: Option<f32> = None;
         if let Ok(zones) = std::fs::read_dir("/sys/class/thermal") {
             for entry in zones.flatten() {
-                if let Ok(text) = std::fs::read_to_string(entry.path().join("temp")) {
-                    if let Ok(millic) = text.trim().parse::<i64>() {
-                        let c = millic as f32 / 1000.0;
-                        hottest = Some(hottest.map_or(c, |h: f32| h.max(c)));
-                    }
+                if let Ok(text) = std::fs::read_to_string(entry.path().join("temp"))
+                    && let Ok(millic) = text.trim().parse::<i64>()
+                {
+                    let c = millic as f32 / 1000.0;
+                    hottest = Some(hottest.map_or(c, |h: f32| h.max(c)));
                 }
             }
         }
@@ -281,15 +281,10 @@ impl crate::platform::Platform for PosixPlatform {
                         let mut rx = stdin_rx;
                         std::thread::spawn(move || {
                             let mut writer = std::io::BufWriter::new(stdin);
-                            loop {
-                                match rx.blocking_recv() {
-                                    Some(line) => {
-                                        use std::io::Write;
-                                        let _ = writer.write_all(line.as_bytes());
-                                        let _ = writer.write_all(b"\n");
-                                    }
-                                    None => break,
-                                }
+                            while let Some(line) = rx.blocking_recv() {
+                                use std::io::Write;
+                                let _ = writer.write_all(line.as_bytes());
+                                let _ = writer.write_all(b"\n");
                             }
                         });
                     }

@@ -1,3 +1,4 @@
+#![allow(clippy::missing_safety_doc)]
 //! C ABI surface for Lodestone. Every function is `extern "C"`, returns a
 //! status code (`0` = ok), and writes its payload into a caller-owned
 //! `*mut *mut c_char` that must be released with `lodestone_string_free`.
@@ -100,7 +101,7 @@ pub struct Engine {
 }
 
 thread_local! {
-    static LAST_ERROR: std::cell::RefCell<String> = std::cell::RefCell::new(String::new());
+    static LAST_ERROR: std::cell::RefCell<String> = const { std::cell::RefCell::new(String::new()) };
 }
 
 fn set_error(msg: impl Into<String>) {
@@ -129,7 +130,7 @@ fn write_out(out: *mut *mut c_char, cstr: CString) {
 // ---------- engine lifecycle ----------
 
 #[unsafe(no_mangle)]
-pub extern "C" fn lodestone_engine_new(data_dir: *const c_char) -> *mut Engine {
+pub unsafe extern "C" fn lodestone_engine_new(data_dir: *const c_char) -> *mut Engine {
     let Some(dir) = take_cstr(data_dir) else {
         set_error("data_dir is null or invalid utf8");
         return std::ptr::null_mut();
@@ -163,7 +164,7 @@ pub extern "C" fn lodestone_engine_new(data_dir: *const c_char) -> *mut Engine {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn lodestone_engine_free(engine: *mut Engine) {
+pub unsafe extern "C" fn lodestone_engine_free(engine: *mut Engine) {
     if !engine.is_null() {
         unsafe {
             drop(Box::from_raw(engine));
@@ -172,7 +173,7 @@ pub extern "C" fn lodestone_engine_free(engine: *mut Engine) {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn lodestone_string_free(s: *mut c_char) {
+pub unsafe extern "C" fn lodestone_string_free(s: *mut c_char) {
     if !s.is_null() {
         unsafe {
             drop(CString::from_raw(s));
@@ -181,7 +182,7 @@ pub extern "C" fn lodestone_string_free(s: *mut c_char) {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn lodestone_last_error() -> *const c_char {
+pub unsafe extern "C" fn lodestone_last_error() -> *const c_char {
     // returns a pointer into thread-local storage; valid until next call on
     // this thread. Callers that need to keep it should copy.
     LAST_ERROR.with(|e| {
@@ -203,22 +204,22 @@ fn engine_ref(engine: *mut Engine) -> Option<&'static mut Engine> {
 }
 
 fn emit(engine: &Engine, event: serde_json::Value) {
-    if let Ok(json) = serde_json::to_string(&event) {
-        if let Ok(cb) = CString::new(json) {
-            let cb_ptr = cb.into_raw();
-            let cb_fn = engine.event_cb.lock().ok().and_then(|g| *g);
-            if let Some(f) = cb_fn {
-                f(cb_ptr as *const c_char);
-            }
-            unsafe {
-                drop(CString::from_raw(cb_ptr));
-            }
+    if let Ok(json) = serde_json::to_string(&event)
+        && let Ok(cb) = CString::new(json)
+    {
+        let cb_ptr = cb.into_raw();
+        let cb_fn = engine.event_cb.lock().ok().and_then(|g| *g);
+        if let Some(f) = cb_fn {
+            f(cb_ptr as *const c_char);
+        }
+        unsafe {
+            drop(CString::from_raw(cb_ptr));
         }
     }
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn lodestone_register_event_callback(
+pub unsafe extern "C" fn lodestone_register_event_callback(
     engine: *mut Engine,
     cb: Option<extern "C" fn(*const c_char)>,
 ) -> c_int {
@@ -237,7 +238,10 @@ pub extern "C" fn lodestone_register_event_callback(
 // ---------- commands ----------
 
 #[unsafe(no_mangle)]
-pub extern "C" fn lodestone_list_server_types(engine: *mut Engine, out: *mut *mut c_char) -> c_int {
+pub unsafe extern "C" fn lodestone_list_server_types(
+    engine: *mut Engine,
+    out: *mut *mut c_char,
+) -> c_int {
     let Some(_engine) = engine_ref(engine) else {
         return 1;
     };
@@ -262,7 +266,10 @@ pub extern "C" fn lodestone_list_server_types(engine: *mut Engine, out: *mut *mu
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn lodestone_device_report(engine: *mut Engine, out: *mut *mut c_char) -> c_int {
+pub unsafe extern "C" fn lodestone_device_report(
+    engine: *mut Engine,
+    out: *mut *mut c_char,
+) -> c_int {
     let Some(engine) = engine_ref(engine) else {
         return 1;
     };
@@ -310,7 +317,7 @@ pub extern "C" fn lodestone_device_report(engine: *mut Engine, out: *mut *mut c_
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn lodestone_list_versions(
+pub unsafe extern "C" fn lodestone_list_versions(
     engine: *mut Engine,
     server_type: *const c_char,
     out: *mut *mut c_char,
@@ -381,7 +388,7 @@ pub extern "C" fn lodestone_list_versions(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn lodestone_create_instance(
+pub unsafe extern "C" fn lodestone_create_instance(
     engine: *mut Engine,
     spec_json: *const c_char,
     out_id: *mut *mut c_char,
@@ -527,7 +534,10 @@ pub extern "C" fn lodestone_create_instance(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn lodestone_list_instances(engine: *mut Engine, out: *mut *mut c_char) -> c_int {
+pub unsafe extern "C" fn lodestone_list_instances(
+    engine: *mut Engine,
+    out: *mut *mut c_char,
+) -> c_int {
     let Some(engine) = engine_ref(engine) else {
         return 1;
     };
@@ -564,7 +574,10 @@ pub extern "C" fn lodestone_list_instances(engine: *mut Engine, out: *mut *mut c
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn lodestone_delete_instance(engine: *mut Engine, id: *const c_char) -> c_int {
+pub unsafe extern "C" fn lodestone_delete_instance(
+    engine: *mut Engine,
+    id: *const c_char,
+) -> c_int {
     let Some(engine) = engine_ref(engine) else {
         return 1;
     };
@@ -588,7 +601,7 @@ pub extern "C" fn lodestone_delete_instance(engine: *mut Engine, id: *const c_ch
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn lodestone_start(engine: *mut Engine, id: *const c_char) -> c_int {
+pub unsafe extern "C" fn lodestone_start(engine: *mut Engine, id: *const c_char) -> c_int {
     let Some(engine) = engine_ref(engine) else {
         return 1;
     };
@@ -686,10 +699,10 @@ pub extern "C" fn lodestone_start(engine: *mut Engine, id: *const c_char) -> c_i
                     if !ready_seen && line.line.contains(&ready_marker) {
                         ready_seen = true;
                         let eng = unsafe { &*(engine_for_thread as *mut Engine) };
-                        if let Ok(mut g) = eng.instances.lock() {
-                            if let Some(r) = g.get_mut(&id_clone) {
-                                r.state = "Running".to_string();
-                            }
+                        if let Ok(mut g) = eng.instances.lock()
+                            && let Some(r) = g.get_mut(&id_clone)
+                        {
+                            r.state = "Running".to_string();
                         }
                         emit(
                             eng,
@@ -729,12 +742,12 @@ pub extern "C" fn lodestone_start(engine: *mut Engine, id: *const c_char) -> c_i
             "Crashed"
         };
         let eng = unsafe { &*(engine_for_thread as *mut Engine) };
-        if let Ok(mut g) = eng.instances.lock() {
-            if let Some(r) = g.get_mut(&id_clone) {
-                r.state = new_state.to_string();
-                r.tail = tail.clone();
-                r.handle = std::sync::Arc::new(std::sync::Mutex::new(None));
-            }
+        if let Ok(mut g) = eng.instances.lock()
+            && let Some(r) = g.get_mut(&id_clone)
+        {
+            r.state = new_state.to_string();
+            r.tail = tail.clone();
+            r.handle = std::sync::Arc::new(std::sync::Mutex::new(None));
         }
         emit(
             eng,
@@ -744,10 +757,10 @@ pub extern "C" fn lodestone_start(engine: *mut Engine, id: *const c_char) -> c_i
     });
 
     // mark starting
-    if let Ok(mut g) = engine.instances.lock() {
-        if let Some(r) = g.get_mut(&id) {
-            r.state = "Starting".to_string();
-        }
+    if let Ok(mut g) = engine.instances.lock()
+        && let Some(r) = g.get_mut(&id)
+    {
+        r.state = "Starting".to_string();
     }
     emit(
         engine,
@@ -757,7 +770,7 @@ pub extern "C" fn lodestone_start(engine: *mut Engine, id: *const c_char) -> c_i
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn lodestone_stop(engine: *mut Engine, id: *const c_char) -> c_int {
+pub unsafe extern "C" fn lodestone_stop(engine: *mut Engine, id: *const c_char) -> c_int {
     let Some(engine) = engine_ref(engine) else {
         return 1;
     };
@@ -784,11 +797,11 @@ pub extern "C" fn lodestone_stop(engine: *mut Engine, id: *const c_char) -> c_in
     if let Some(h) = slot.lock().unwrap().as_ref() {
         h.kill();
     }
-    if let Ok(mut g) = engine.instances.lock() {
-        if let Some(r) = g.get_mut(&id) {
-            r.state = "Stopped".to_string();
-            *r.handle.lock().unwrap() = None;
-        }
+    if let Ok(mut g) = engine.instances.lock()
+        && let Some(r) = g.get_mut(&id)
+    {
+        r.state = "Stopped".to_string();
+        *r.handle.lock().unwrap() = None;
     }
     emit(
         engine,
@@ -798,12 +811,12 @@ pub extern "C" fn lodestone_stop(engine: *mut Engine, id: *const c_char) -> c_in
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn lodestone_kill(engine: *mut Engine, id: *const c_char) -> c_int {
-    lodestone_stop(engine, id)
+pub unsafe extern "C" fn lodestone_kill(engine: *mut Engine, id: *const c_char) -> c_int {
+    unsafe { lodestone_stop(engine, id) }
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn lodestone_send_console(
+pub unsafe extern "C" fn lodestone_send_console(
     engine: *mut Engine,
     id: *const c_char,
     line: *const c_char,
@@ -829,19 +842,18 @@ pub extern "C" fn lodestone_send_console(
         };
         g.get(&id).map(|r| r.handle.clone())
     };
-    if let Some(slot) = slot {
-        if let Some(h) = slot.lock().unwrap().as_ref() {
-            if h.send_console(line) {
-                return 0;
-            }
-        }
+    if let Some(slot) = slot
+        && let Some(h) = slot.lock().unwrap().as_ref()
+        && h.send_console(line)
+    {
+        return 0;
     }
     set_error(format!("instance {id} is not running"));
     1
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn lodestone_analyze_crash(
+pub unsafe extern "C" fn lodestone_analyze_crash(
     engine: *mut Engine,
     id: *const c_char,
     out: *mut *mut c_char,
@@ -891,7 +903,7 @@ pub extern "C" fn lodestone_analyze_crash(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn lodestone_provision_runtime(
+pub unsafe extern "C" fn lodestone_provision_runtime(
     engine: *mut Engine,
     java_major: c_int,
     out: *mut *mut c_char,
