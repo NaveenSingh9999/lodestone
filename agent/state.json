@@ -1,0 +1,18 @@
+{
+  "goal": "Build Lodestone spec-first: Rust core (M0 done), then runtime provisioning from the Termux repo (M1), Paper provider (M2), Android shell",
+  "state": "M0 complete: core crate compiles clean on-device (aarch64/Termux), 38 tests green, 3 commits",
+  "last_actions": [
+    "Scaffolded cargo workspace crates/lodestone-core per lodestone.md section 3",
+    "Removed user-flagged mocks/placeholders; real HTTPS client (reqwest+rustls, allowlist+redirect enforcement), real FsStorage (atomic writes), real Vanilla install with checksum+size verification, no dead default impls",
+    "Implemented 16 KB ELF alignment gate + auxv page-size probe (spec 4.2 step 5, 2.1)",
+    "Test fakes confined to tests/ per spec acceptance criterion 9",
+    "All 38 tests pass with zero warnings; formatted; committed in 3 chunks"
+  ],
+  "next": [
+    "M1: TermuxRepoSource — fetch Packages index, pin Termux keyring, resolve openjdk-21 deps incl. ca-certificates-java, deb extraction, truststore smoke test",
+    "M2: PaperMC Fill v3 provider",
+    "M3: supervisor process integration over real Platform adapter",
+    "M4: UniFFI bindings + Android :server service process shim"
+  ],
+  "blocked": []
+}
