@@ -1,0 +1,139 @@
+Package: ca-certificates
+Installed-Size: 240
+Maintainer: @termux
+Architecture: all
+Version: 1:2026.10.20-1
+Filename: pool/main/c/ca-certificates/ca-certificates_1:2026.10.20-1_all.deb
+Size: 110132
+MD5sum: a6b9c0989b376b3b2327c51e5569cb7a
+SHA1: 1ffdb56f55909b6d82cf1f4592234161ee7a691e
+SHA256: ab8a7fe63293b455c02399ee125eb8a0041e430ccfdf89a5be8317522fdf9107
+SHA512: 9fbe27b3a8e1c4ae13b75ad6490f861e21e4927a10fc1323ebf401c5802886f9f5de6bcb15d580de98276e7577e4f1bf94b05370b36ff807c630989ab21a67e2
+Description: Common CA certificates
+Homepage: https://curl.se/docs/caextract.html
+
+Package: ca-certificates-java
+Installed-Size: 180
+Maintainer: @termux
+Architecture: all
+Version: 1:2026.10.20-1
+Depends: ca-certificates (= 1:2026.10.20-1)
+Filename: pool/main/c/ca-certificates-java/ca-certificates-java_1:2026.10.20-1_all.deb
+Size: 95020
+MD5sum: a32cc19896250872a200b209fbe4a62f
+SHA1: a1ed8521028a7b28fb101dc19284680a58fcfee4
+SHA256: 3ce94c49c9d77fbb4db097e434b4117b267ad48ee5ede512e69eeadaf47ac6f4
+SHA512: 65e14cc99cb0e431611ff232451c0b3683a973a69fa15332b4825e03d41fb94110e001652f1da79961db65d7321a791858df9f48c9f6be921dc6819727cedbf3
+Description: Common CA certificates (java keystore format)
+Homepage: https://curl.se/docs/caextract.html
+
+Package: libandroid-shmem
+Installed-Size: 72
+Maintainer: @termux
+Architecture: aarch64
+Version: 0.7
+Replaces: libandroid-shmem-dev
+Breaks: libandroid-shmem-dev
+Filename: pool/main/liba/libandroid-shmem/libandroid-shmem_0.7_aarch64.deb
+Size: 7216
+MD5sum: 7c5ba5793613a5a474c5c8fd2ca4404f
+SHA1: 65be300306079ef2153357df6e501d928523884a
+SHA256: 0da3a24d558b93c92bcf8d611e0826a99ff96e396b148e6cdf33b47c47c57ff6
+SHA512: 63f2abc7859784f70f4468b56ec1b827463c59f6d8e678200601c8e0e7f1b6e17397ff51de8db1396fb162c32e8abd42eb9aa851e6c512b067db6f8066c8098c
+Description: System V shared memory emulation on Android using ashmem
+Homepage: https://github.com/termux/libandroid-shmem
+
+Package: libandroid-spawn
+Installed-Size: 96
+Maintainer: @termux
+Architecture: aarch64
+Version: 0.3
+Filename: pool/main/liba/libandroid-spawn/libandroid-spawn_0.3_aarch64.deb
+Size: 15216
+MD5sum: 9ca51da4b8bea9c4f189c3637bf822a2
+SHA1: 0c2dd0d28e892c9bff7f9299d2ebf27b024a748b
+SHA256: 7988fa788ef48ab5da9660443905a2e4099ac36221739d72f5c39acc644b4d1c
+SHA512: ad013e35f1529a20aa1987277c28ebe8bb4ff84a05c11a41cc82f0ea62b4294dba6c06eaadcd80986a2a042c86fa202dbb8b8664f193dc17bf7475ee55a0e1ad
+Description: Shared library for the posix_spawn system function
+Homepage: https://man7.org/linux/man-pages/man3/posix_spawn.3.html
+
+Package: libiconv
+Installed-Size: 1216
+Maintainer: @termux
+Architecture: aarch64
+Version: 1.19
+Replaces: libandroid-support (<= 24), libiconv-dev, libandroid-support-dev
+Breaks: libandroid-support (<= 24), libiconv-dev, libandroid-support-dev
+Filename: pool/main/libi/libiconv/libiconv_1.19_aarch64.deb
+Size: 562724
+MD5sum: 77b8b1ca98043be9008418f5a02f1e01
+SHA1: e3bd0ff2dc9f4063d07ea89077dc46e3f0de074f
+SHA256: fe9481b1dc101c6c3552943f25435109fd522aecc615ae49594f9fbee863bb37
+SHA512: 1a75bf2d60e1eabfd816ee7d903bd9b754ed731aa0703245dc40f3a697993f1a60cc5292fe41e18d5afd2d00c497d20c952474070f6475f3834c28f6e0bfb478
+Description: An implementation of iconv()
+Homepage: https://www.gnu.org/software/libiconv/
+
+Package: libjpeg-turbo
+Installed-Size: 2304
+Maintainer: @termux
+Architecture: aarch64
+Version: 3.2.0
+Replaces: libjpeg-turbo-dev
+Breaks: libjpeg-turbo-dev
+Filename: pool/main/libj/libjpeg-turbo/libjpeg-turbo_3.2.0_aarch64.deb
+Size: 453600
+MD5sum: c6fd817e292a1acac660b183c856abe2
+SHA1: 9b1e764eb44d91886d4d81f0f96ac6f86db3ed7e
+SHA256: e6339075bcde28b4902d5a51f4063164834abfd2fa115e881ae637a34585e54f
+SHA512: e4136da4add9c58793543b8fecc3d67846ff22eb37d9447731ef3e4a84fb0f30511de1ac1caebd966294bd5b0c6ba0bd75151dda4ebd9f7b6c319bf90ef20c39
+Description: Library for reading and writing JPEG image files
+Homepage: https://libjpeg-turbo.virtualgl.org
+
+Package: littlecms
+Installed-Size: 540
+Maintainer: @termux
+Architecture: aarch64
+Version: 2.19.1
+Replaces: littlecms-dev
+Breaks: littlecms-dev
+Filename: pool/main/l/littlecms/littlecms_2.19.1_aarch64.deb
+Size: 143396
+MD5sum: b43bdf98592f3cd33c3be196c5671a5f
+SHA1: 255659e7f230098e1ff7387affb3eeb667fcef02
+SHA256: 274f732a186563beca204f5d016d30cac8e5c24f7c4395b60881f9613eddf1a1
+SHA512: 7db53a1c495be680f34fade58e53caa821d21321521a309ff74c4299793b1d010dbdefca1bd87eceaf6d9e7ac212baa6cf41ab7cc60b62f495696a773e11e4ca
+Description: Color management library
+Homepage: http://www.littlecms.com/
+
+Package: openjdk-21
+Installed-Size: 249296
+Maintainer: @termux
+Architecture: aarch64
+Version: 21.0.13
+Depends: libandroid-shmem, libandroid-spawn, libiconv, libjpeg-turbo, zlib, littlecms, alsa-plugins
+Recommends: ca-certificates-java, openjdk-21-x, resolv-conf
+Suggests: cups
+Filename: pool/main/o/openjdk-21/openjdk-21_21.0.13_aarch64.deb
+Size: 106105996
+MD5sum: 58c0bab678ed5399b9727ad5190c03a4
+SHA1: 103adbd811a8b12261e694f48e82b273d4684edc
+SHA256: 5e5bff2252236b30339a68739834ec98baf858f19905f9fae87198bf5b117cb2
+SHA512: f29cba12aecfaebc7aec465dfbde0c48f1755a71ad4cd9f6483b168fe5ed0a87b832a1e36f75368197b0d15b6dd78fd414b16810d07e5c4f224b0bb14de81f06
+Description: Java development kit and runtime
+Homepage: https://openjdk.java.net
+
+Package: zlib
+Installed-Size: 264
+Maintainer: @termux
+Architecture: aarch64
+Version: 1.3.2
+Replaces: ndk-sysroot (<< 19b-3), zlib-dev
+Breaks: ndk-sysroot (<< 19b-3), zlib-dev
+Filename: pool/main/z/zlib/zlib_1.3.2_aarch64.deb
+Size: 62840
+MD5sum: b4166790460dd0fd219fb038240b9d8e
+SHA1: cfc600af6fe38f6c7054f96b7120909c878c3abd
+SHA256: 75e7d0af17fcc3b40004309fdc00a1ddb9ae08346dce5e269902c34ac3966ac9
+SHA512: d6747d02e0cbbd11b575546d0bfec183371468ef2fbf1cd5594d6a747fbd607ac86985faea515897968a8b4fbdc1ad0cbf1b16bca0ddbe347e33b456059ced29
+Description: Compression library implementing the deflate compression method found in gzip and PKZIP
+Homepage: https://www.zlib.net/

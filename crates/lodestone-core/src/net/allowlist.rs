@@ -22,6 +22,7 @@ const ALLOWED_HOSTS: &[&str] = &[
     "raw.githubusercontent.com",
     "packages.termux.org",
     "packages.termux.dev",
+    "grimler.se",
     "mirror.mwt.me",
 ];
 

@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 pub mod elf;
+pub mod termux;
 
 pub use elf::check_elf_alignment;
 
