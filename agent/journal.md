@@ -21,3 +21,5 @@
 - M4 (0b0addc): lodestone-ffi C ABI (engine, device report, catalog list_versions, create/list/delete instance, start/stop/kill/send_console, analyze_crash, provision_runtime) + UDL mirroring spec §3.3. Smoke test round-trips engine + list_server_types + device_report.
 
 - M5 CI green: Rust native lib (arm64-v8a) built via cargo-ndk in CI and packaged into APK; Compose + :server foreground service + JNA bridge compile. Full pipeline (native + build) passes.
+
+- All remaining spec scope done: config engine, backup engine, Modrinth content, scheduling+sleep-when-empty, crash analysis, tunnel manager. CI green.

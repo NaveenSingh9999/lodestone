@@ -15,7 +15,7 @@
     "M4: UniFFI bindings + Android :server service process shim"
   ],
   "blocked": [],
-  "milestone": "M5",
+  "milestone": "all",
   "m1": {
     "commit": "be4f1db",
     "status": "core-provisioning-built",
@@ -48,5 +48,13 @@
     "native_build": "cargo-ndk arm64-v8a via CI",
     "apk": "assembleDebug green",
     "ci": "https://github.com/NaveenSingh9999/lodestone/actions"
-  }
+  },
+  "extras": [
+    "config",
+    "backup",
+    "content (modrinth)",
+    "schedule",
+    "crash analysis",
+    "tunnel manager"
+  ]
 }

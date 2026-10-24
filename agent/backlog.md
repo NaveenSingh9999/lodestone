@@ -11,3 +11,5 @@ DONE M2 (6d58b60): Paper Fill v3 provider, sha256 gate-first, STABLE-only, fixtu
 DONE M3 (5fcd1ee): supervisor + real POSIX exec
 DONE M4 (0b0addc): FFI surface + UDL
 DONE M5 (CI): Android shell scaffold + native build + APK, all green in GitHub Actions
+
+DONE: config, backup, content, schedule, crash, tunnel — all CI green
