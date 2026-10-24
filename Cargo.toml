@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/lodestone-core"]
+members = ["crates/lodestone-core", "crates/lodestone-ffi"]
 
 [workspace.package]
 version = "0.1.0"

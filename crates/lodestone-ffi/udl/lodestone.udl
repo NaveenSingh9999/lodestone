@@ -1,0 +1,86 @@
+// UniFFI interface definition for Lodestone (spec §3.3).
+// Codegen runs in CI via `uniffi-bindgen`; this file is the source of truth
+// for the Kotlin/Swift/C# bindings. The Rust scaffolding is generated from it.
+
+namespace lodestone {
+    // engine
+    [Throws=LodestoneError]
+    Engine new_engine(string data_dir);
+
+    // device
+    DeviceReport device_report(Engine engine);
+    [Throws=LodestoneError]
+    string list_server_types(Engine engine);
+
+    // catalog
+    [Throws=LodestoneError]
+    sequence<VersionInfo> list_versions(Engine engine, string server_type);
+
+    // instances
+    [Throws=LodestoneError]
+    string create_instance(Engine engine, string spec_json);
+    [Throws=LodestoneError]
+    string list_instances(Engine engine);
+    [Throws=LodestoneError]
+    void delete_instance(Engine engine, string id);
+
+    // lifecycle
+    [Throws=LodestoneError]
+    void start(Engine engine, string id);
+    [Throws=LodestoneError]
+    void stop(Engine engine, string id);
+    [Throws=LodestoneError]
+    void kill(Engine engine, string id);
+    [Throws=LodestoneError]
+    void send_console(Engine engine, string id, string line);
+
+    // diagnostics
+    [Throws=LodestoneError]
+    string analyze_crash(Engine engine, string id);
+    [Throws=LodestoneError]
+    string provision_runtime(Engine engine, i32 java_major);
+};
+
+// callbacks
+callback interface EventListener {
+    void on_event(string event_json);
+};
+
+interface Engine {
+    void register_event_callback(EventListener? cb);
+};
+
+// records
+dictionary DeviceReport {
+    u64 total_ram_mb;
+    u64 available_ram_mb;
+    boolean low_memory;
+    u32 cores;
+    u32 max_freq_mhz;
+    u8 thermal_level;
+    float? temperature_c;
+    u8? battery_percent;
+    boolean charging;
+};
+
+dictionary VersionInfo {
+    string id;
+    boolean release;
+    u32? java_major;
+};
+
+dictionary InstanceSummary {
+    string id;
+    string server_type;
+    string version;
+    string state;
+};
+
+enum LodestoneError {
+    "InvalidArgument",
+    "NotFound",
+    "Io",
+    "Network",
+    "Catalog",
+    "Runtime",
+};

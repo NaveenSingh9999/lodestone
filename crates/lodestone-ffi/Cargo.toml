@@ -1,0 +1,15 @@
+[package]
+name = "lodestone-ffi"
+description = "C ABI surface for Lodestone (bridge to Kotlin/Swift/C# until UniFFI codegen runs in CI)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+lodestone-core = { path = "../lodestone-core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
