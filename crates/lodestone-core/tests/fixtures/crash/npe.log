@@ -1,0 +1,5 @@
+[12:00:00] [Server thread/ERROR]: This crash report has been saved to: ./crash-reports/crash-2026.txt
+java.lang.NullPointerException: Cannot invoke "Object.toString()" because "x" is null
+	at com.example.Mod.onTick(Mod.java:42)
+Caused by: java.lang.IllegalStateException: bad state
+	at com.example.Mod.init(Mod.java:10)

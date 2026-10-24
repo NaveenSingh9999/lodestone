@@ -1,9 +1,15 @@
+pub mod backup;
 pub mod catalog;
+pub mod config;
+pub mod content;
+pub mod crash;
 pub mod error;
 pub mod events;
 pub mod instance;
 pub mod net;
 pub mod platform;
 pub mod runtime;
+pub mod schedule;
 pub mod storage;
 pub mod supervisor;
+pub mod tunnel;

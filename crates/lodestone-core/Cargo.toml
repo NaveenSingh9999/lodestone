@@ -21,3 +21,11 @@ lzma-rs = "0.3.0"
 tar = "0.4.46"
 hex = "0.4.3"
 libc = "0.2.191"
+
+[features]
+default = []
+tunnel = ["dep:playit-agent-core"]
+
+[dependencies.playit-agent-core]
+version = "0.20"
+optional = true

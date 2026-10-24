@@ -23,6 +23,8 @@ const ALLOWED_HOSTS: &[&str] = &[
     "raw.githubusercontent.com",
     "packages.termux.org",
     "packages.termux.dev",
+    "api.modrinth.com",
+    "cdn.modrinth.com",
     "grimler.se",
     "mirror.mwt.me",
 ];
