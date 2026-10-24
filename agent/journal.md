@@ -13,3 +13,5 @@
 - reqwest 0.12 + rustls on aarch64 Android builds under Termux rustc 1.97.1 (proven by build).
 - Auxv page-size probe validated against /proc/self/auxv in tests.
 - Spec quotes followed: hash verification mandatory (4.1), no unverified downloads (9), SIGKILL classification (4.4), memory budget formula (4.5).
+
+- M1 core built+committed be4f1db: termux repo verification chain, resolver, deb extraction, provisioner. Device thermal constraint adopted: no full cargo test runs; targeted lib tests only. E2E (102MB openjdk-21 closure) awaits user go.

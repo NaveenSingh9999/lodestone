@@ -9,10 +9,25 @@
     "All 38 tests pass with zero warnings; formatted; committed in 3 chunks"
   ],
   "next": [
-    "M1: TermuxRepoSource — fetch Packages index, pin Termux keyring, resolve openjdk-21 deps incl. ca-certificates-java, deb extraction, truststore smoke test",
+    "M1: TermuxRepoSource \u2014 fetch Packages index, pin Termux keyring, resolve openjdk-21 deps incl. ca-certificates-java, deb extraction, truststore smoke test",
     "M2: PaperMC Fill v3 provider",
     "M3: supervisor process integration over real Platform adapter",
     "M4: UniFFI bindings + Android :server service process shim"
   ],
-  "blocked": []
+  "blocked": [],
+  "milestone": "M1",
+  "m1": {
+    "commit": "be4f1db",
+    "status": "core-provisioning-built",
+    "notes": [
+      "repo.rs apt parser",
+      "dpkg version compare",
+      "resolver w/ skip-set+OR+pins",
+      "deb ar/xz/tar extract prefix-strip",
+      "InRelease OpenPGP verify (rpgp 0.21) embedded autobuilds+grimler keys",
+      "provision.rs orchestrator+meta.toml+truststore",
+      "15/15 termux unit tests in 0.17s (RUST_TEST_THREADS=1)"
+    ]
+  },
+  "test_policy": "cargo check per delta; RUST_TEST_THREADS=1 module-filtered lib tests only at milestones; heavy E2E gated by user"
 }
