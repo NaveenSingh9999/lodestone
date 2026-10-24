@@ -8,4 +8,5 @@
 6. Sleep-when-empty proxy, tunnel verdict, remote API — after M5 (spec 4.11-4.13)
 
 DONE M2 (6d58b60): Paper Fill v3 provider, sha256 gate-first, STABLE-only, fixtures+8 tests
-NEXT: M3 supervisor real-process integration (gated: runs java), M4 UniFFI surface, M5 Android service
+DONE M3 (5fcd1ee): supervisor + real POSIX exec
+NEXT: M4 UniFFI FFI surface (offline), M5 Android service

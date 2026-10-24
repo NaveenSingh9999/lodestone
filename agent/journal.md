@@ -15,3 +15,5 @@
 - Spec quotes followed: hash verification mandatory (4.1), no unverified downloads (9), SIGKILL classification (4.4), memory budget formula (4.5).
 
 - M1 core built+committed be4f1db: termux repo verification chain, resolver, deb extraction, provisioner. Device thermal constraint adopted: no full cargo test runs; targeted lib tests only. E2E (102MB openjdk-21 closure) awaits user go.
+
+- M3 (5fcd1ee): PosixPlatform (real fork/exec, process groups, SIGKILL group kill, signal-faithful exit class) + InstanceRunner driving the FSM over a real handle. 6 tests: graceful stop FSM chain, crash-loop give-up, system-kill never-restarted, hung-server SIGKILL escalation, launch-spec escape, stdout bridge. 37+8+7+5+6+4 lib/integration tests all green.

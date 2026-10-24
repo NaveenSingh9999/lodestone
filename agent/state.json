@@ -15,7 +15,7 @@
     "M4: UniFFI bindings + Android :server service process shim"
   ],
   "blocked": [],
-  "milestone": "M1",
+  "milestone": "M3",
   "m1": {
     "commit": "be4f1db",
     "status": "core-provisioning-built",
@@ -29,5 +29,11 @@
       "15/15 termux unit tests in 0.17s (RUST_TEST_THREADS=1)"
     ]
   },
-  "test_policy": "cargo check per delta; RUST_TEST_THREADS=1 module-filtered lib tests only at milestones; heavy E2E gated by user"
+  "test_policy": "cargo check per delta; RUST_TEST_THREADS=1 module-filtered lib tests only at milestones; heavy E2E gated by user",
+  "m3": {
+    "commit": "5fcd1ee",
+    "platform": "PosixPlatform",
+    "runner": "InstanceRunner",
+    "tests": "6/6 real fork/exec"
+  }
 }
