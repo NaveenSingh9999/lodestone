@@ -1,4 +1,5 @@
 pub mod paper;
+pub mod purpur;
 pub mod types;
 pub mod vanilla;
 

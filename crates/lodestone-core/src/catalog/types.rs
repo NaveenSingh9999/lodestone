@@ -31,6 +31,7 @@ impl ServerType {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HashAlgo {
+    Md5,
     Sha1,
     Sha256,
 }
@@ -51,6 +52,10 @@ fn lower_hex(bytes: &[u8]) -> String {
 
 fn digest_hex(algo: HashAlgo, data: &[u8]) -> String {
     match algo {
+        HashAlgo::Md5 => {
+            let d = md5::compute(data);
+            lower_hex(&d.0)
+        }
         HashAlgo::Sha1 => {
             let mut h = sha1::Sha1::new();
             h.update(data);

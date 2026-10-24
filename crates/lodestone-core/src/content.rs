@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use crate::error::CatalogError;
 use crate::net::HttpClient;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, serde::Serialize)]
 pub struct SearchHit {
     pub project_id: String,
     pub slug: String,
@@ -19,14 +19,14 @@ pub struct SearchHit {
     pub downloads: u64,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, serde::Serialize)]
 pub struct SearchResponse {
     pub hits: Vec<SearchHit>,
     #[serde(default)]
     pub total_hits: u64,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, serde::Serialize)]
 pub struct Project {
     pub id: String,
     pub slug: String,
@@ -39,7 +39,7 @@ pub struct Project {
     pub versions: Vec<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, serde::Serialize)]
 pub struct Version {
     pub id: String,
     pub name: String,
@@ -53,7 +53,7 @@ pub struct Version {
     pub files: Vec<VersionFile>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, serde::Serialize)]
 pub struct VersionFile {
     pub url: String,
     pub filename: String,

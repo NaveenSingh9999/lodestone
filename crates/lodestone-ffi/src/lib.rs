@@ -940,3 +940,336 @@ pub unsafe extern "C" fn lodestone_provision_runtime(
         }
     }
 }
+
+// ---------- backup ----------
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lodestone_create_backup(
+    engine: *mut Engine,
+    instance_id: *const c_char,
+    source_dir: *const c_char,
+    label: *const c_char,
+    out_name: *mut *mut c_char,
+) -> c_int {
+    let Some(engine) = engine_ref(engine) else {
+        return 1;
+    };
+    let Some(instance_id) = take_cstr(instance_id) else {
+        set_error("instance_id is null");
+        return 1;
+    };
+    let Some(source_dir) = take_cstr(source_dir) else {
+        set_error("source_dir is null");
+        return 1;
+    };
+    let label = take_cstr(label).unwrap_or_else(|| "manual".to_string());
+    if out_name.is_null() {
+        set_error("out_name is null");
+        return 1;
+    }
+    let be = lodestone_core::backup::BackupEngine::new(engine.data_dir.join("backups"));
+    match be.create(&instance_id, std::path::Path::new(&source_dir), &label) {
+        Ok(info) => match CString::new(info.name) {
+            Ok(c) => {
+                write_out(out_name, c);
+                0
+            }
+            Err(e) => {
+                set_error(format!("name cstring: {e}"));
+                1
+            }
+        },
+        Err(e) => {
+            set_error(e);
+            1
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lodestone_list_backups(
+    engine: *mut Engine,
+    instance_id: *const c_char,
+    out: *mut *mut c_char,
+) -> c_int {
+    let Some(engine) = engine_ref(engine) else {
+        return 1;
+    };
+    let Some(instance_id) = take_cstr(instance_id) else {
+        set_error("instance_id is null");
+        return 1;
+    };
+    if out.is_null() {
+        set_error("out is null");
+        return 1;
+    }
+    let be = lodestone_core::backup::BackupEngine::new(engine.data_dir.join("backups"));
+    match be.list(&instance_id) {
+        Ok(list) => {
+            #[derive(serde::Serialize)]
+            struct Dto {
+                name: String,
+                size: u64,
+                sha256: String,
+            }
+            let dto: Vec<Dto> = list
+                .into_iter()
+                .map(|b| Dto {
+                    name: b.name,
+                    size: b.size,
+                    sha256: b.sha256,
+                })
+                .collect();
+            match ok_json(&dto) {
+                Ok(c) => {
+                    write_out(out, c);
+                    0
+                }
+                Err(e) => {
+                    set_error(e);
+                    1
+                }
+            }
+        }
+        Err(e) => {
+            set_error(e);
+            1
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lodestone_restore_backup(
+    engine: *mut Engine,
+    archive_path: *const c_char,
+    dest_dir: *const c_char,
+    out_count: *mut u64,
+) -> c_int {
+    let Some(engine) = engine_ref(engine) else {
+        return 1;
+    };
+    let Some(archive_path) = take_cstr(archive_path) else {
+        set_error("archive_path is null");
+        return 1;
+    };
+    let Some(dest_dir) = take_cstr(dest_dir) else {
+        set_error("dest_dir is null");
+        return 1;
+    };
+    let be = lodestone_core::backup::BackupEngine::new(engine.data_dir.join("backups"));
+    match be.restore(
+        std::path::Path::new(&archive_path),
+        std::path::Path::new(&dest_dir),
+        None,
+    ) {
+        Ok(count) => {
+            if !out_count.is_null() {
+                unsafe {
+                    *out_count = count;
+                }
+            }
+            0
+        }
+        Err(e) => {
+            set_error(e);
+            1
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lodestone_delete_backup(
+    engine: *mut Engine,
+    archive_path: *const c_char,
+) -> c_int {
+    let Some(_engine) = engine_ref(engine) else {
+        return 1;
+    };
+    let Some(archive_path) = take_cstr(archive_path) else {
+        set_error("archive_path is null");
+        return 1;
+    };
+    let be = lodestone_core::backup::BackupEngine::new(std::path::PathBuf::from("."));
+    match be.delete(std::path::Path::new(&archive_path)) {
+        Ok(()) => 0,
+        Err(e) => {
+            set_error(e);
+            1
+        }
+    }
+}
+
+// ---------- content ----------
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lodestone_search_content(
+    engine: *mut Engine,
+    query: *const c_char,
+    limit: c_int,
+    out: *mut *mut c_char,
+) -> c_int {
+    let Some(engine) = engine_ref(engine) else {
+        return 1;
+    };
+    let Some(query) = take_cstr(query) else {
+        set_error("query is null");
+        return 1;
+    };
+    if out.is_null() {
+        set_error("out is null");
+        return 1;
+    }
+    let client = engine.client.clone();
+    let mc = lodestone_core::content::ModrinthClient::new(client);
+    let limit = if limit <= 0 { 10 } else { limit as u32 };
+    match engine.rt.block_on(mc.search(&query, limit)) {
+        Ok(resp) => match ok_json(&resp.hits) {
+            Ok(c) => {
+                write_out(out, c);
+                0
+            }
+            Err(e) => {
+                set_error(e);
+                1
+            }
+        },
+        Err(e) => {
+            set_error(format!("{e}"));
+            1
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lodestone_list_content_versions(
+    engine: *mut Engine,
+    project_id: *const c_char,
+    out: *mut *mut c_char,
+) -> c_int {
+    let Some(engine) = engine_ref(engine) else {
+        return 1;
+    };
+    let Some(project_id) = take_cstr(project_id) else {
+        set_error("project_id is null");
+        return 1;
+    };
+    if out.is_null() {
+        set_error("out is null");
+        return 1;
+    }
+    let client = engine.client.clone();
+    let mc = lodestone_core::content::ModrinthClient::new(client);
+    match engine.rt.block_on(mc.versions(&project_id)) {
+        Ok(vs) => match ok_json(&vs) {
+            Ok(c) => {
+                write_out(out, c);
+                0
+            }
+            Err(e) => {
+                set_error(e);
+                1
+            }
+        },
+        Err(e) => {
+            set_error(format!("{e}"));
+            1
+        }
+    }
+}
+
+// ---------- config ----------
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lodestone_apply_tuning(
+    engine: *mut Engine,
+    server_type: *const c_char,
+    profile: *const c_char,
+    work_dir: *const c_char,
+) -> c_int {
+    let Some(_engine) = engine_ref(engine) else {
+        return 1;
+    };
+    let Some(server_type) = take_cstr(server_type) else {
+        set_error("server_type is null");
+        return 1;
+    };
+    let Some(profile) = take_cstr(profile) else {
+        set_error("profile is null");
+        return 1;
+    };
+    let Some(work_dir) = take_cstr(work_dir) else {
+        set_error("work_dir is null");
+        return 1;
+    };
+    let profile = match profile.as_str() {
+        "low" => lodestone_core::config::TuningProfile::Low,
+        "mid" => lodestone_core::config::TuningProfile::Mid,
+        "high" => lodestone_core::config::TuningProfile::High,
+        other => {
+            set_error(format!("unknown profile: {other}"));
+            return 1;
+        }
+    };
+    let storage = match lodestone_core::storage::FsStorage::open(&work_dir) {
+        Ok(s) => s,
+        Err(e) => {
+            set_error(format!("storage: {e}"));
+            return 1;
+        }
+    };
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    match rt.block_on(lodestone_core::config::apply_to_instance_dir(
+        &storage,
+        &server_type,
+        profile,
+    )) {
+        Ok(_) => 0,
+        Err(e) => {
+            set_error(format!("{e}"));
+            1
+        }
+    }
+}
+
+// ---------- tunnel ----------
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lodestone_tunnel_start(
+    engine: *mut Engine,
+    daemon_path: *const c_char,
+    port: c_int,
+    secret_key: *const c_char,
+    out_status: *mut *mut c_char,
+) -> c_int {
+    let Some(_engine) = engine_ref(engine) else {
+        return 1;
+    };
+    let Some(daemon_path) = take_cstr(daemon_path) else {
+        set_error("daemon_path is null");
+        return 1;
+    };
+    let sk = take_cstr(secret_key);
+    let mgr = lodestone_core::tunnel::TunnelManager::new(lodestone_core::tunnel::TunnelConfig {
+        daemon_path: std::path::PathBuf::from(daemon_path),
+        local_port: port as u16,
+        secret_key: sk,
+    });
+    match mgr.start() {
+        Ok(()) => {
+            let status = format!("{:?}", mgr.state());
+            if !out_status.is_null()
+                && let Ok(c) = CString::new(status)
+            {
+                write_out(out_status, c);
+            }
+            // keep manager alive by leaking (process lifetime); production
+            // code stores it in the engine. For now, leak to avoid drop-kill.
+            Box::leak(Box::new(mgr));
+            0
+        }
+        Err(e) => {
+            set_error(e);
+            1
+        }
+    }
+}
