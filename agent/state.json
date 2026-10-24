@@ -15,7 +15,7 @@
     "M4: UniFFI bindings + Android :server service process shim"
   ],
   "blocked": [],
-  "milestone": "M3",
+  "milestone": "M4",
   "m1": {
     "commit": "be4f1db",
     "status": "core-provisioning-built",
@@ -35,5 +35,12 @@
     "platform": "PosixPlatform",
     "runner": "InstanceRunner",
     "tests": "6/6 real fork/exec"
+  },
+  "m4": {
+    "commit": "0b0addc",
+    "crate": "lodestone-ffi (cdylib+rlib)",
+    "surface": "engine/catalog/instances/lifecycle/diagnostics",
+    "udl": "crates/lodestone-ffi/udl/lodestone.udl",
+    "tests": "1 smoke"
   }
 }
