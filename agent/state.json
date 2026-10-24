@@ -15,7 +15,7 @@
     "M4: UniFFI bindings + Android :server service process shim"
   ],
   "blocked": [],
-  "milestone": "M4",
+  "milestone": "M5",
   "m1": {
     "commit": "be4f1db",
     "status": "core-provisioning-built",
@@ -42,5 +42,11 @@
     "surface": "engine/catalog/instances/lifecycle/diagnostics",
     "udl": "crates/lodestone-ffi/udl/lodestone.udl",
     "tests": "1 smoke"
+  },
+  "m5": {
+    "status": "scaffold+CI green",
+    "native_build": "cargo-ndk arm64-v8a via CI",
+    "apk": "assembleDebug green",
+    "ci": "https://github.com/NaveenSingh9999/lodestone/actions"
   }
 }

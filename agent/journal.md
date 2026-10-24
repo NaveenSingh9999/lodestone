@@ -19,3 +19,5 @@
 - M3 (5fcd1ee): PosixPlatform (real fork/exec, process groups, SIGKILL group kill, signal-faithful exit class) + InstanceRunner driving the FSM over a real handle. 6 tests: graceful stop FSM chain, crash-loop give-up, system-kill never-restarted, hung-server SIGKILL escalation, launch-spec escape, stdout bridge. 37+8+7+5+6+4 lib/integration tests all green.
 
 - M4 (0b0addc): lodestone-ffi C ABI (engine, device report, catalog list_versions, create/list/delete instance, start/stop/kill/send_console, analyze_crash, provision_runtime) + UDL mirroring spec §3.3. Smoke test round-trips engine + list_server_types + device_report.
+
+- M5 CI green: Rust native lib (arm64-v8a) built via cargo-ndk in CI and packaged into APK; Compose + :server foreground service + JNA bridge compile. Full pipeline (native + build) passes.

@@ -10,4 +10,4 @@
 DONE M2 (6d58b60): Paper Fill v3 provider, sha256 gate-first, STABLE-only, fixtures+8 tests
 DONE M3 (5fcd1ee): supervisor + real POSIX exec
 DONE M4 (0b0addc): FFI surface + UDL
-NEXT: M5 Android service (blocked: needs Android SDK/gradle not present on this device)
+DONE M5 (CI): Android shell scaffold + native build + APK, all green in GitHub Actions
