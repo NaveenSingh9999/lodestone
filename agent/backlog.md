@@ -7,4 +7,5 @@
 5. [M5] Android `:server` service process + dlopen/JLI_Launch shim (spec 5; soak test acceptance gate)
 6. Sleep-when-empty proxy, tunnel verdict, remote API — after M5 (spec 4.11-4.13)
 
-NEXT: E2E provision_openjdk example (gated), platform/posix.rs, M2 Paper Fill v3
+DONE M2 (6d58b60): Paper Fill v3 provider, sha256 gate-first, STABLE-only, fixtures+8 tests
+NEXT: M3 supervisor real-process integration (gated: runs java), M4 UniFFI surface, M5 Android service
