@@ -7,6 +7,7 @@ const ALLOWED_HOSTS: &[&str] = &[
     "api.minecraftservices.com",
     "api.papermc.io",
     "fill.papermc.io",
+    "fill-data.papermc.io",
     "repo.papermc.io",
     "api.purpurmc.org",
     "meta.fabricmc.net",

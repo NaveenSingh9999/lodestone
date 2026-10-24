@@ -148,6 +148,12 @@ impl<H: HttpClient> Provider for VanillaProvider<H> {
         artifact: &Artifact,
         dir: &std::path::Path,
     ) -> Result<(), CatalogError> {
+        // Refuse an unverified artifact BEFORE spending bytes on it.
+        artifact.checksum.as_ref().ok_or_else(|| {
+            CatalogError::Source(
+                "artifact has no checksum; refusing unverified install".to_string(),
+            )
+        })?;
         std::fs::create_dir_all(dir)
             .map_err(|e| CatalogError::Source(format!("mkdir {}: {e}", dir.display())))?;
         let dest = dir.join(&artifact.file_name);
@@ -162,14 +168,8 @@ impl<H: HttpClient> Provider for VanillaProvider<H> {
 
         self.client.download(&artifact.url, &dest).await?;
 
-        if let Some(checksum) = &artifact.checksum {
-            checksum.verify_file(&dest).await?;
-        } else {
-            return Err(CatalogError::ChecksumMismatch {
-                expected: "none".to_string(),
-                actual: "missing checksum on artifact".to_string(),
-            });
-        }
+        let checksum = artifact.checksum.as_ref().unwrap();
+        checksum.verify_file(&dest).await?;
 
         if let Some(expected_size) = artifact.size_bytes {
             let actual = tokio::fs::metadata(&dest)
