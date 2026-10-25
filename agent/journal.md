@@ -86,3 +86,12 @@
 - CrossplayOptions with geyser/floodgate/via_version/via_backwards toggles; CrossplayOptions::full() for all.
 - 7 new tests (loader/folder/slug mapping + mock install + unsupported type). Total lib tests: 118.
 - Both CI and Android workflows green on commit 802dcac.
+
+## 2026-10-25 — Geyser wired to Android UI + app logo
+
+- AccessScreen.kt: new Compose screen with crossplay toggle that calls NativeBridge.enableCrossplay with instance ID and options JSON; shows remote API token from StateStore.
+- MainActivity.kt: holds engine pointer, passes to AccessScreen, adds toggle button between Home and Access views.
+- NativeBridge.kt: added lodestone_enable_crossplay FFI binding + wrapper.
+- App logo: /sdcard/Download/logo.svg (official Lodestone logo) converted via rsvg-convert to mipmap PNGs at all densities (48/72/96/144/192px) plus round variants; manifest updated with android:icon and android:roundIcon.
+- Fixed CrossplayComponent serde::Serialize derive (needed by FFI emit).
+- Both CI and Android workflows green on commit aca0d5d.
