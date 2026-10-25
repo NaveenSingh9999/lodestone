@@ -665,6 +665,8 @@ pub unsafe extern "C" fn lodestone_start(engine: *mut Engine, id: *const c_char)
         args: vec![],
         env: Default::default(),
         work_dir,
+        rcon_port: None,
+        rcon_password: None,
     };
     if let Err(e) = validate_launch_spec(&spec) {
         set_error(e);
