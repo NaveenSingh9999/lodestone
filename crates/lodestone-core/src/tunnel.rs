@@ -245,9 +245,14 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(&root).unwrap();
         let daemon = root.join("playit-stub");
+        let sh = if std::path::Path::new("/system/bin/sh").exists() {
+            "/system/bin/sh"
+        } else {
+            "/bin/sh"
+        };
         std::fs::write(
             &daemon,
-            "#!/system/bin/sh\necho 'tunnel established, address: stub.playit.gg:25565'\nsleep 2\n",
+            format!("#!{sh}\necho 'tunnel established, address: stub.playit.gg:25565'\nsleep 2\n"),
         )
         .unwrap();
         std::fs::set_permissions(&daemon, PermissionsExt::from_mode(0o755)).unwrap();
