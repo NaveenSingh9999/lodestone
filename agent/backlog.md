@@ -22,5 +22,6 @@ DONE: Android service lifecycle integration — LodestoneService starts remote A
 
 DONE: RCON metrics (4.3 depth) — Source RCON client + MetricsCollector + InstanceRunner callback, all CI/Android green
 DONE: JLI_Launch dlopen (spec §5 depth) — AndroidPlatform dlopen's libjli.so + calls JLI_Launch inside :server service process, piped stdio, wired into FFI via cfg(target_os = "android"), compiles for aarch64-linux-android, 3 tests
+DONE: Geyser/Bedrock crossplay (4.11 optional) — crossplay.rs installs Geyser/Floodgate/ViaVersion/ViaBackwards via Modrinth v2 into plugins/ (paper-family) or mods/ (fabric/forge/etc.), server-type-aware slugs, 7 tests
 
-REMAINING: M5 depth items (Geyser crossplay). Optional: end-to-end device testing on real Termux device.
+REMAINING: Optional end-to-end device testing on real Termux device.

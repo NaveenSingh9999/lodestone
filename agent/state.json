@@ -1,9 +1,9 @@
 {
   "goal": "Complete Lodestone (Android-first Minecraft Java server manager per lodestone.md) — all spec scope (M0–M5 + extras) implemented and CI-green.",
-  "state": "All spec scope complete: M0–M5, catalog providers (4.1), sleep proxy (4.12), remote API (4.13), FFI wiring, Android spec 5 surfaces, Android service lifecycle integration, RCON metrics (4.3 depth), JLI_Launch dlopen for Android JVM hosting (spec §5 depth). 112 lib tests green. CI + Android workflows green.",
+  "state": "All spec scope complete: M0–M5, catalog providers (4.1), sleep proxy (4.12), remote API (4.13), FFI wiring, Android spec 5 surfaces, Android service lifecycle integration, RCON metrics (4.3 depth), JLI_Launch dlopen (spec §5 depth), Geyser/Bedrock crossplay (4.11 optional switch). 118 lib tests green. CI + Android workflows green.",
   "last_actions": [
-    "JLI_Launch dlopen for Android JVM hosting (spec §5 depth): new AndroidPlatform (platform/android.rs) dlopen's libjli.so from the extracted JDK and calls JLI_Launch inside the :server service process with piped stdio; wired into lodestone-ffi via cfg(target_os = \"android\"); 3 new unit tests, 112 total",
-    "Both CI (40232271655) and Android (40232271751) workflows green on commit 9174d23"
+    "Geyser/Bedrock crossplay module (spec 4.11): crossplay.rs installs Geyser/Floodgate/ViaVersion/ViaBackwards via Modrinth v2 into plugins/ (paper-family) or mods/ (fabric/forge/etc.), server-type-aware slugs, 7 new tests, 118 total (802dcac)",
+    "Both CI (40235596128) and Android (40235596118) workflows green on commit 802dcac"
   ],
   "extras": [
     "config (ServerProperties + TuningProfile, paper YAML, apply_to_instance)",
@@ -18,11 +18,12 @@
     "Android spec 5: notification status + start/stop actions, QS tile, Glance widget, StateStore shared state",
     "Android service lifecycle: remote API on 127.0.0.1:7300, sleep proxy auto-starts/stops with instance state",
     "RCON metrics (4.3 depth): Source RCON client + MetricsCollector + InstanceRunner callback",
-    "JLI_Launch dlopen (spec §5 depth): AndroidPlatform hosts JVM via dlopen(libjli.so)+JLI_Launch with piped stdio; compiles for aarch64-linux-android, 3 tests"
+    "JLI_Launch dlopen (spec §5 depth): AndroidPlatform hosts JVM via dlopen(libjli.so)+JLI_Launch with piped stdio, wired into FFI via cfg, 3 tests",
+    "Geyser/Bedrock crossplay (4.11 optional): installs Geyser/Floodgate/ViaVersion/ViaBackwards via Modrinth into plugins/ or mods/"
   ],
   "next": [
-    "M5 depth items remaining: Geyser/Bedrock crossplay",
-    "Optional: end-to-end device testing on real Termux device (install instance, start server, verify sleep proxy wake + remote API + RCON metrics + JLI_Launch JVM hosting)"
+    "Optional: end-to-end device testing on real Termux device (install instance, start server, verify sleep proxy wake + remote API + RCON metrics + JLI_Launch JVM hosting)",
+    "Optional: wire Geyser crossplay switch into Android UI (Access screen)"
   ],
   "blocked": [],
   "milestone": "all",

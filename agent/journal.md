@@ -77,3 +77,12 @@
 - 3 new unit tests (argv construction, path validation, missing libjli). Total lib tests: 112.
 - Both CI and Android workflows green on commit 9174d23.
 - Note: JLI_Launch path is unverified on a physical device (residual acceptance gates: multi-hour soak, screen-off SIGKILL, 16 KB-page device test).
+
+## 2026-10-25 — Geyser/Bedrock crossplay (spec 4.11 optional switch)
+
+- crossplay.rs: installs Geyser/Floodgate/ViaVersion/ViaBackwards via Modrinth v2 API into plugins/ (paper/purpur/folia) or mods/ (fabric/quilt/forge/neoforge) based on server type.
+- Server-type-aware Modrinth slugs: geyser-fabric, geyser-forge, geyser-neoforge (vs geyser for paper-family); same for floodgate.
+- Version resolution filters by game_versions and loaders (paper, fabric, quilt, forge, neoforge).
+- CrossplayOptions with geyser/floodgate/via_version/via_backwards toggles; CrossplayOptions::full() for all.
+- 7 new tests (loader/folder/slug mapping + mock install + unsupported type). Total lib tests: 118.
+- Both CI and Android workflows green on commit 802dcac.
