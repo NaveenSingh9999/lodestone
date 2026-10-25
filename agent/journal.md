@@ -41,3 +41,13 @@
 - FFI wiring: added `lodestone_start_sleep_proxy` / `lodestone_stop_sleep_proxy` / `lodestone_start_remote_api` / `lodestone_stop_remote_api` to lodestone-ffi C ABI; wake/sleep hooks flip the proxy running flag + emit events; shared `broadcast::Sender<Event>` channel wired into `emit()` so `/events` WS subscribers receive typed events; remote API runs on a dedicated tokio runtime so `dispatch` can safely `block_on` engine.rt.
 - Verification: cargo fmt clean, clippy `-D warnings` clean, 103 lib tests pass, both CI and Android workflows green on commit b1494cc.
 - Next: Android surfaces (spec 5) — notification upgrade with server status, Quick Settings tile, Glance home-screen widget.
+
+## 2026-10-25 — Spec 5 Android surfaces
+
+- Notification upgrade (LodestoneService.kt): registers event callback via NativeBridge, tracks instance state via StateStore (SharedPreferences), updates foreground notification dynamically with per-instance status summary, adds "Start All"/"Stop All" action buttons via PendingIntents.
+- Quick Settings tile (QsTileService.kt): TileService that reflects running state (ACTIVE/INACTIVE) and toggles start/stop all via foreground service intent.
+- Glance home-screen widget (LodestoneWidget.kt + LodestoneWidgetReceiver.kt + widget_info.xml): GlanceAppWidget showing server status summary with Start/Stop buttons that launch foreground service actions.
+- NativeBridge.kt: added FFI bindings for lodestone_list_instances, lodestone_start/stop_sleep_proxy, lodestone_start/stop_remote_api.
+- AndroidManifest.xml: BIND_QUICK_SETTINGS_TILE permission, QsTileService + LodestoneWidgetReceiver declarations.
+- build.gradle.kts: added androidx.glance:glance-appwidget:1.0.0.
+- Verification: cargo fmt clean, clippy -D warnings clean, 103 lib tests pass, both CI and Android workflows green on commit 84d7a94.

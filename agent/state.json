@@ -1,10 +1,12 @@
 {
   "goal": "Complete Lodestone (Android-first Minecraft Java server manager per lodestone.md) — all spec scope (M0–M5 + extras) implemented and CI-green.",
-  "state": "M0-M5 complete. Fabric/Quilt/Forge/NeoForge providers built + live-API verified (103 lib tests). FFI wiring for sleep proxy + remote API done and CI/Android green. Remaining: Android surfaces (spec 5).",
+  "state": "M0-M5 complete. All catalog providers (4.1) built. Spec 4.12 (sleep proxy) + 4.13 (remote API) + FFI wiring done. Spec 5 Android surfaces (notification, QS tile, Glance widget) done. 103 lib tests green. CI + Android workflows green.",
   "last_actions": [
-    "Fabric/Quilt/Forge/NeoForge providers with live-API verification, fixtures, sha1/sha256 gate-first (3ed6f02), 103 lib tests green",
-    "FFI wiring: lodestone_start_sleep_proxy / lodestone_stop_sleep_proxy / lodestone_start_remote_api / lodestone_stop_remote_api exposed via lodestone-ffi C ABI; wake/sleep hooks emit events; shared broadcast event channel wired into emit() (b1494cc)",
-    "Both CI and Android workflows green on commit b1494cc"
+    "Spec 5 Android surfaces: notification upgrade with server status + start/stop action buttons (LodestoneService.kt), Quick Settings tile (QsTileService.kt), Glance home-screen widget (LodestoneWidget.kt + LodestoneWidgetReceiver.kt + widget_info.xml)",
+    "Shared StateStore (SharedPreferences) for cross-component state sync; NativeBridge FFI bindings for listInstances, start/stop_sleep_proxy, start/stop_remote_api",
+    "AndroidManifest.xml: BIND_QUICK_SETTINGS_TILE permission, QsTileService, LodestoneWidgetReceiver declarations",
+    "build.gradle.kts: added androidx.glance:glance-appwidget:1.0.0 dependency",
+    "Both CI (40221968920) and Android (40221968916) workflows green on commit 84d7a94"
   ],
   "extras": [
     "config (ServerProperties + TuningProfile, paper YAML, apply_to_instance)",
@@ -15,11 +17,12 @@
     "tunnel manager (playit fallback, daemon process control, address parse)",
     "sleep proxy (spec 4.12): MC status/login protocol, wake hook, PROXY v1, IdleTracker",
     "remote API (spec 4.13): HTTP+WS, bearer auth, attempt lockout, LAN-only",
-    "catalog providers (4.1): vanilla, paper, purpur, fabric, quilt, forge, neoforge — all live-API verified + checksum-gated"
+    "catalog providers (4.1): vanilla, paper, purpur, fabric, quilt, forge, neoforge — all live-API verified + checksum-gated",
+    "Android spec 5: notification status + actions, QS tile, Glance widget"
   ],
   "next": [
-    "Android surfaces: notification upgrade with server status, Quick Settings tile, Glance home-screen widget (spec 5)",
-    "M5 depth: JLI_Launch dlopen, RCON metrics, Geyser/Bedrock crossplay (deferred)",
+    "M5 depth items (deferred): JLI_Launch dlopen, RCON metrics, Geyser/Bedrock crossplay",
+    "Consider wire sleep proxy + remote API into Android service lifecycle for end-to-end use"
   ],
   "blocked": [],
   "milestone": "all",

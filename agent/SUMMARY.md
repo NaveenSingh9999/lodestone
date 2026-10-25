@@ -1,16 +1,17 @@
 # SUMMARY — what happened while I was away
 
 ## Done (2026-10-25 run)
-- Catalog provider spec 4.1 complete: Fabric (meta.fabricmc.net v2, sha1 sidecar), Quilt (meta.quiltmc.org v3, inline sha1), Forge (promotions_slim.json + maven sha1 sidecar), NeoForge (maven versions API + sha1 sidecar) — all live-API verified against real endpoints, fixtures captured, checksum-gated installs, 7 new tests. Total lib tests: 103, all green.
-- FFI wiring for spec 4.12/4.13: `lodestone_start_sleep_proxy`, `lodestone_stop_sleep_proxy`, `lodestone_start_remote_api`, `lodestone_stop_remote_api` exposed via the lodestone-ffi C ABI; wake/sleep hooks flip proxy behavior + emit events; shared broadcast event channel feeds `/events` WS subscribers; remote API runs on a dedicated tokio runtime.
-- Both GitHub CI (fmt/clippy/test) and Android workflows green on commit b1494cc.
+- Spec 5 Android surfaces complete: notification with server status + start/stop action buttons, Quick Settings tile, Glance home-screen widget — all reading from core state via a shared StateStore.
+- NativeBridge FFI bindings for listInstances, start/stop_sleep_proxy, start/stop_remote_api.
+- All prior work intact: M0-M5 complete, catalog providers (4.1), sleep proxy (4.12), remote API (4.13), FFI wiring — 103 lib tests green.
+- Both GitHub CI and Android workflows green on commit 84d7a94.
 
 ## In progress
-- Nothing half-done; commit b1494cc is clean and CI-green.
+- Nothing half-done; commit 84d7a94 is clean and CI-green.
 
 ## Queued next (agent/backlog.md)
-- Android surfaces: notification upgrade with server status, Quick Settings tile, Glance home-screen widget (spec 5).
 - M5 depth items (deferred): JLI_Launch dlopen, RCON metrics, Geyser/Bedrock crossplay.
+- Optional: wire sleep proxy + remote API into Android service lifecycle for end-to-end use.
 
 ## Blocked / needs human decision
 - None.
