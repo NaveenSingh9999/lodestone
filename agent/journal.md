@@ -23,3 +23,10 @@
 - M5 CI green: Rust native lib (arm64-v8a) built via cargo-ndk in CI and packaged into APK; Compose + :server foreground service + JNA bridge compile. Full pipeline (native + build) passes.
 
 - All remaining spec scope done: config engine, backup engine, Modrinth content, scheduling+sleep-when-empty, crash analysis, tunnel manager. CI green.
+
+## Session: sleep proxy (4.12) + remote API (4.13)
+- a001e58: tunnel stub shebang portable (CI fix)
+- 1ba9151/d0e59e9: sleep proxy — varint/framing, handshake parse, SleepingSession (status MOTD / wake-kick), SleepProxy serve loop, passthrough w/ PROXY v1, query_status, IdleTracker (fires-once semantics). 13 tests incl. 2 loopback e2e.
+- 827c2a5: remote API — hand-rolled HTTP/1.1 parse/encode, AuthGate (constant-time eq, N-fail lockout), /health, POST /api JSON dispatch, /events WS (RFC 6455 handshake w/ sha1+base64, broadcast event pump, ping/pong). 10 tests.
+- 96 lib tests; CI + Android green (runs 40178339917, 40181738791).
+- Note: let-else single-line formatting differs between local rustfmt and CI — avoid let-else in shared code.

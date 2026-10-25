@@ -1,0 +1,24 @@
+[
+ {
+  "maven": "org.quiltmc:quilt-installer:0.15.1",
+  "version": "0.15.1",
+  "url": "https://maven.quiltmc.org/repository/release/org/quiltmc/quilt-installer/0.15.1/quilt-installer-0.15.1.jar",
+  "file_size": 8734533,
+  "hashes": {
+   "sha1": "a6ea7a9e08e6f5ca399ea12101fbe56195a445e3",
+   "sha256": "2bd88a1429eaeb3ce3f5e9c49c591c551012937b35bf332ca277b4d93d70408d",
+   "sha512": "ece8d2304731c64a8ecc4676e528530bdd37438b1b65fcae71c440e6b505b7e4c2f6d062ba1281f74b18521ca6004acbbb9a528d7cc2573d6b333b73aacc3e52"
+  }
+ },
+ {
+  "maven": "org.quiltmc:quilt-installer:0.15.0",
+  "version": "0.15.0",
+  "url": "https://maven.quiltmc.org/repository/release/org/quiltmc/quilt-installer/0.15.0/quilt-installer-0.15.0.jar",
+  "file_size": 7381964,
+  "hashes": {
+   "sha1": "11b946dfb1549ce807ca047cd194d60003b6d3f0",
+   "sha256": "b80b9d96cb9972ffd2a22f94b882c965dff8732beda68fdd5d4066edb6f245ba",
+   "sha512": "e81cf7d5c57166baa19920c042d7a4a48e98ed16ef385a3812a241c90dadbad71fc2cc998b4c7d0812b647e09ebbbd88cd6ddfe476e6e83da0d155028bb3d4ef"
+  }
+ }
+]

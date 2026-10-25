@@ -1,18 +1,27 @@
 {
   "goal": "Build Lodestone spec-first: Rust core (M0 done), then runtime provisioning from the Termux repo (M1), Paper provider (M2), Android shell",
-  "state": "M0 complete: core crate compiles clean on-device (aarch64/Termux), 38 tests green, 3 commits",
+  "state": "M0-M5 complete. Spec 4.12 (sleep proxy) + 4.13 (remote API) done. 96 lib tests green. CI + Android workflows green.",
   "last_actions": [
-    "Scaffolded cargo workspace crates/lodestone-core per lodestone.md section 3",
-    "Removed user-flagged mocks/placeholders; real HTTPS client (reqwest+rustls, allowlist+redirect enforcement), real FsStorage (atomic writes), real Vanilla install with checksum+size verification, no dead default impls",
-    "Implemented 16 KB ELF alignment gate + auxv page-size probe (spec 4.2 step 5, 2.1)",
-    "Test fakes confined to tests/ per spec acceptance criterion 9",
-    "All 38 tests pass with zero warnings; formatted; committed in 3 chunks"
+    "Fixed tunnel stub shebang for CI portability (a001e58)",
+    "Sleep-when-empty proxy (spec 4.12): MC status/login protocol, SleepingSession, wake hook, PROXY v1, IdleTracker (1ba9151)",
+    "Remote management API (spec 4.13): hand-rolled HTTP/1.1 + WebSocket, bearer token auth with attempt lockout, LAN-only bind policy (827c2a5)",
+    "All CI workflows green after both milestones"
+  ],
+  "extras": [
+    "config (ServerProperties + TuningProfile, paper YAML, apply_to_instance)",
+    "backup (tar.gz + sha256 sidecar, create/list/verify/restore/export/delete)",
+    "content (Modrinth v2, sha1/sha512/MD5 gate-first, api.modrinth.com + cdn)",
+    "schedule (cron parser, Hinnant civil calendar, IdleTracker)",
+    "crash analysis (exception extraction, remedy_for map)",
+    "tunnel manager (playit fallback, daemon process control, address parse)",
+    "sleep proxy (spec 4.12): MC status/login protocol, wake hook, PROXY v1, IdleTracker",
+    "remote API (spec 4.13): HTTP+WS, bearer auth, attempt lockout, LAN-only"
   ],
   "next": [
-    "M1: TermuxRepoSource \u2014 fetch Packages index, pin Termux keyring, resolve openjdk-21 deps incl. ca-certificates-java, deb extraction, truststore smoke test",
-    "M2: PaperMC Fill v3 provider",
-    "M3: supervisor process integration over real Platform adapter",
-    "M4: UniFFI bindings + Android :server service process shim"
+    "Fabric/Quilt/Forge/NeoForge installer orchestration (deferred - sha256 unverifiable)",
+    "M5 depth: JLI_Launch dlopen, RCON metrics, Geyser/Bedrock crossplay",
+    "Engine wiring: expose sleep/remote via FFI, wire into Android service lifecycle",
+    "Android notification/widget/tile surfaces (spec 5)"
   ],
   "blocked": [],
   "milestone": "all",
@@ -29,7 +38,7 @@
       "15/15 termux unit tests in 0.17s (RUST_TEST_THREADS=1)"
     ]
   },
-  "test_policy": "cargo check per delta; RUST_TEST_THREADS=1 module-filtered lib tests only at milestones; heavy E2E gated by user",
+  "test_policy": "cargo check per delta; RUST_TEST_THREADS=1 module-filtered lib tests only at milestones; heavy E2E gated by user; verify via gh run watch after push",
   "m3": {
     "commit": "5fcd1ee",
     "platform": "PosixPlatform",
@@ -48,13 +57,5 @@
     "native_build": "cargo-ndk arm64-v8a via CI",
     "apk": "assembleDebug green",
     "ci": "https://github.com/NaveenSingh9999/lodestone/actions"
-  },
-  "extras": [
-    "config",
-    "backup",
-    "content (modrinth)",
-    "schedule",
-    "crash analysis",
-    "tunnel manager"
-  ]
+  }
 }
