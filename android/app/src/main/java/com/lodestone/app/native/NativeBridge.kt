@@ -22,6 +22,11 @@ interface LodestoneLib : Library {
     fun lodestone_analyze_crash(engine: Pointer, id: String, out: PointerByReference): Int
     fun lodestone_provision_runtime(engine: Pointer, javaMajor: Int, out: PointerByReference): Int
     fun lodestone_register_event_callback(engine: Pointer, cb: EventCallback?): Int
+    fun lodestone_list_instances(engine: Pointer, out: PointerByReference): Int
+    fun lodestone_start_sleep_proxy(engine: Pointer, configJson: String, bindPort: Int, serverHost: String, serverPort: Int): Int
+    fun lodestone_stop_sleep_proxy(engine: Pointer): Int
+    fun lodestone_start_remote_api(engine: Pointer, token: String, bindPort: Int, allowWan: Int): Int
+    fun lodestone_stop_remote_api(engine: Pointer): Int
 }
 
 fun interface EventCallback {
@@ -50,4 +55,31 @@ object NativeBridge {
         val out = PointerByReference()
         return readOut(lib.lodestone_device_report(engine, out), out)
     }
+
+    fun listInstances(engine: Pointer): String? {
+        val out = PointerByReference()
+        return readOut(lib.lodestone_list_instances(engine, out), out)
+    }
+
+    fun registerEventCallback(engine: Pointer, cb: EventCallback): Int =
+        lib.lodestone_register_event_callback(engine, cb)
+
+    fun startSleepProxy(
+        engine: Pointer,
+        configJson: String,
+        bindPort: Int,
+        serverHost: String,
+        serverPort: Int
+    ): Int = lib.lodestone_start_sleep_proxy(engine, configJson, bindPort, serverHost, serverPort)
+
+    fun stopSleepProxy(engine: Pointer): Int = lib.lodestone_stop_sleep_proxy(engine)
+
+    fun startRemoteApi(
+        engine: Pointer,
+        token: String,
+        bindPort: Int,
+        allowWan: Int
+    ): Int = lib.lodestone_start_remote_api(engine, token, bindPort, allowWan)
+
+    fun stopRemoteApi(engine: Pointer): Int = lib.lodestone_stop_remote_api(engine)
 }
