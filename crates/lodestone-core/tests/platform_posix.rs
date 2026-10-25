@@ -68,6 +68,8 @@ fn make_spec(work: &Path, java_home: &Path) -> LaunchSpec {
         args: vec![],
         env: Default::default(),
         work_dir: work.to_path_buf(),
+        rcon_port: None,
+        rcon_password: None,
     }
 }
 

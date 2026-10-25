@@ -152,6 +152,10 @@ pub struct LaunchSpec {
     pub args: Vec<String>,
     pub env: HashMap<String, String>,
     pub work_dir: PathBuf,
+    /// Optional RCON server port for metrics collection.
+    pub rcon_port: Option<u16>,
+    /// Optional RCON password for authentication.
+    pub rcon_password: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -298,6 +302,8 @@ mod tests {
             env: HashMap::new(),
             args: vec![],
             work_dir: work.clone(),
+            rcon_port: None,
+            rcon_password: None,
         };
         validate_launch_spec(&ok).unwrap();
 
@@ -309,6 +315,8 @@ mod tests {
             env: HashMap::new(),
             args: vec![],
             work_dir: work.clone(),
+            rcon_port: None,
+            rcon_password: None,
         };
         assert!(validate_launch_spec(&escape).is_err());
     }

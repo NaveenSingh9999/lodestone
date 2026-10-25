@@ -11,7 +11,10 @@ use std::time::{Duration, Instant};
 
 use tokio::sync::oneshot;
 
+use crate::events::MetricsSample;
+use crate::metrics::MetricsCollector;
 use crate::platform::{ExitInfo, ExitKind, LaunchSpec, Platform, ServerHandle};
+use crate::rcon::RconConfig;
 use crate::supervisor::{CrashTracker, FsmEvent, InstancePolicy, InstanceState, step};
 
 const TAIL_CAP: usize = 256;
@@ -52,6 +55,7 @@ pub struct InstanceRunner {
     platform: Arc<dyn Platform>,
     policy: InstancePolicy,
     instance_id: String,
+    on_metrics: Option<Arc<dyn Fn(MetricsSample) + Send + Sync>>,
 }
 
 pub fn mark(phases: &mut Vec<(InstanceState, u64)>, started: &Instant, state: InstanceState) {
@@ -100,7 +104,15 @@ impl InstanceRunner {
             platform,
             policy,
             instance_id: instance_id.into(),
+            on_metrics: None,
         }
+    }
+
+    /// Attach a callback that receives RCON metrics samples while the
+    /// instance is running. The callback is invoked on every poll interval.
+    pub fn with_metrics_callback(mut self, cb: Arc<dyn Fn(MetricsSample) + Send + Sync>) -> Self {
+        self.on_metrics = Some(cb);
+        self
     }
 
     pub fn instance_id(&self) -> &str {
@@ -203,6 +215,46 @@ impl InstanceRunner {
                                 if let Some(next) = step(InstanceState::Starting, FsmEvent::Ready) {
                                     state = next;
                                     mark(&mut phases, &started, state);
+                                }
+                                // Start RCON metrics polling once the server
+                                // reports ready, if RCON is configured.
+                                if let (
+                                    Some(port),
+                                    Some(password),
+                                    Some(cb),
+                                ) = (
+                                    &spec.rcon_port,
+                                    &spec.rcon_password,
+                                    self.on_metrics.as_ref(),
+                                ) {
+                                    let port = *port;
+                                    let password = password.clone();
+                                    let cb = cb.clone();
+                                    let instance_id = self.instance_id.clone();
+                                    tokio::spawn(async move {
+                                        let config = RconConfig {
+                                            address: format!("127.0.0.1:{port}")
+                                                .parse()
+                                                .unwrap_or_else(|_| {
+                                                    "127.0.0.1:25575"
+                                                        .parse()
+                                                        .unwrap()
+                                                }),
+                                            password,
+                                        };
+                                        let collector =
+                                            MetricsCollector::new(config, instance_id);
+                                        loop {
+                                            tokio::time::sleep(
+                                                Duration::from_secs(30),
+                                            )
+                                            .await;
+                                            if let Ok(sample) = collector.poll().await {
+                                                cb(sample);
+                                            }
+                                            // server may be down; retry next cycle
+                                        }
+                                    });
                                 }
                             }
                             push_tail(&mut tail, line.line);
