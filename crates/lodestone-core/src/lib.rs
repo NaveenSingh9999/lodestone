@@ -8,6 +8,7 @@ pub mod events;
 pub mod instance;
 pub mod net;
 pub mod platform;
+pub mod remote;
 pub mod runtime;
 pub mod schedule;
 pub mod sleep;
