@@ -22,7 +22,12 @@ use lodestone_core::catalog::paper::PaperProvider;
 use lodestone_core::catalog::types::Provider;
 use lodestone_core::catalog::vanilla::VanillaProvider;
 use lodestone_core::net::HttpsClient;
-use lodestone_core::platform::{LaunchSpec, PosixPlatform, validate_launch_spec};
+use lodestone_core::platform::{LaunchSpec, validate_launch_spec};
+
+#[cfg(not(target_os = "android"))]
+use lodestone_core::platform::PosixPlatform as CorePlatform;
+#[cfg(target_os = "android")]
+use lodestone_core::platform::android::AndroidPlatform as CorePlatform;
 use lodestone_core::remote::{
     ApiRequest, ApiResponse, RemoteApi as CoreRemoteApi, RemoteApiConfig as CoreRemoteApiConfig,
     RemoteBackend,
@@ -163,7 +168,7 @@ pub unsafe extern "C" fn lodestone_engine_new(data_dir: *const c_char) -> *mut E
         }
     };
     let platform: Arc<dyn lodestone_core::platform::Platform> =
-        Arc::new(PosixPlatform::new(PathBuf::from(&dir)));
+        Arc::new(CorePlatform::new(PathBuf::from(&dir)));
     let engine = Box::new(Engine {
         data_dir: PathBuf::from(dir),
         platform,

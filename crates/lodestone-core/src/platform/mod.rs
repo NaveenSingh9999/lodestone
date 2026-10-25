@@ -6,6 +6,9 @@ use tokio::sync::{mpsc, oneshot};
 use crate::runtime::RuntimeSource;
 
 pub mod posix;
+
+#[cfg(target_os = "android")]
+pub mod android;
 pub use posix::PosixPlatform;
 
 #[derive(Debug, Clone)]
