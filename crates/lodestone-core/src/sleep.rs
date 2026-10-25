@@ -608,7 +608,10 @@ mod tests {
         let server_addr = l.local_addr().unwrap();
         tokio::spawn(async move {
             loop {
-                let Ok((mut s, _)) = l.accept().await else { break };
+                let (mut s, _) = match l.accept().await {
+                    Ok(c) => c,
+                    Err(_) => break,
+                };
                 tokio::spawn(async move {
                     let mut buf = [0u8; 512];
                     let n = s.read(&mut buf).await.unwrap();
