@@ -51,3 +51,10 @@
 - AndroidManifest.xml: BIND_QUICK_SETTINGS_TILE permission, QsTileService + LodestoneWidgetReceiver declarations.
 - build.gradle.kts: added androidx.glance:glance-appwidget:1.0.0.
 - Verification: cargo fmt clean, clippy -D warnings clean, 103 lib tests pass, both CI and Android workflows green on commit 84d7a94.
+
+## 2026-10-25 — Android service lifecycle integration (spec 5 depth)
+
+- LodestoneService now starts the remote management API on 127.0.0.1:7300 (LAN-only, bearer token auth) when the service is created, per spec 4.13.
+- Sleep proxy auto-starts on 0.0.0.0:25565 → 127.0.0.1:25565 when any instance transitions to Running (via StateChanged event), and stops when all instances are Stopped.
+- Notification gained "Start Sleep Proxy"/"Stop Sleep Proxy" actions reflecting current proxy state.
+- Both CI and Android workflows green on commit 85057df.
