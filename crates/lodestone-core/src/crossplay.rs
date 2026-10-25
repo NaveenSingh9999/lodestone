@@ -41,7 +41,7 @@ pub struct CrossplayResult {
     pub skipped: Vec<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct CrossplayComponent {
     pub name: String,
     pub file: String,
