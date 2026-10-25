@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import com.lodestone.app.R
 import com.lodestone.app.native.NativeBridge
 import com.lodestone.app.state.StateStore
 import org.json.JSONArray
@@ -174,7 +175,7 @@ class LodestoneService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Lodestone")
             .setContentText(summary + (if (proxyActive) " • sleep proxy on" else ""))
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setOngoing(true)
             .addAction(android.R.drawable.ic_media_play, "Start All", startPending)
             .addAction(android.R.drawable.ic_media_pause, "Stop All", stopPending)
