@@ -3,6 +3,7 @@ pub mod catalog;
 pub mod config;
 pub mod content;
 pub mod crash;
+pub mod crossplay;
 pub mod error;
 pub mod events;
 pub mod instance;
