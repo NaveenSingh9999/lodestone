@@ -10,6 +10,7 @@ pub mod net;
 pub mod platform;
 pub mod runtime;
 pub mod schedule;
+pub mod sleep;
 pub mod storage;
 pub mod supervisor;
 pub mod tunnel;
