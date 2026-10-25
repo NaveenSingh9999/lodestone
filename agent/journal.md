@@ -30,3 +30,14 @@
 - 827c2a5: remote API — hand-rolled HTTP/1.1 parse/encode, AuthGate (constant-time eq, N-fail lockout), /health, POST /api JSON dispatch, /events WS (RFC 6455 handshake w/ sha1+base64, broadcast event pump, ping/pong). 10 tests.
 - 96 lib tests; CI + Android green (runs 40178339917, 40181738791).
 - Note: let-else single-line formatting differs between local rustfmt and CI — avoid let-else in shared code.
+
+## 2026-10-25 — Catalog providers + FFI wiring
+
+- Fabric provider (meta.fabricmc.net v2): installer artifact verified via sha1 sidecar (`{url}.sha1`), no published checksum on the server-jar bundle so the installer is the verifiable path; 3 tests (versions, resolve sha1-gated, install verify).
+- Quilt provider (meta.quiltmc.org v3): installer sha1 inline in JSON — no sidecar fetch needed; 2 tests.
+- Forge provider (files.minecraftforge.net promotions_slim.json + maven sha1 sidecar); 1 test.
+- NeoForge provider (maven versions API + sha1 sidecar, highest patch per MC version); 1 test.
+- All providers registered in catalog/mod.rs, allowlist already covered the hosts. 103 lib tests total, all green.
+- FFI wiring: added `lodestone_start_sleep_proxy` / `lodestone_stop_sleep_proxy` / `lodestone_start_remote_api` / `lodestone_stop_remote_api` to lodestone-ffi C ABI; wake/sleep hooks flip the proxy running flag + emit events; shared `broadcast::Sender<Event>` channel wired into `emit()` so `/events` WS subscribers receive typed events; remote API runs on a dedicated tokio runtime so `dispatch` can safely `block_on` engine.rt.
+- Verification: cargo fmt clean, clippy `-D warnings` clean, 103 lib tests pass, both CI and Android workflows green on commit b1494cc.
+- Next: Android surfaces (spec 5) — notification upgrade with server status, Quick Settings tile, Glance home-screen widget.

@@ -15,5 +15,7 @@ DONE M5 (CI): Android shell scaffold + native build + APK, all green in GitHub A
 DONE: config, backup, content, schedule, crash, tunnel — all CI green
 DONE: sleep-when-empty proxy (4.12) — MC status/login protocol, wake hook, idle tracker, PROXY v1
 DONE: remote management API (4.13) — HTTP+WS, bearer token auth, attempt lockout, LAN-only
+DONE: Fabric/Quilt/Forge/NeoForge catalog providers (4.1) — live-API verified, sha1/sha256 gate-first, fixtures+tests
+DONE: Engine FFI wiring — lodestone_start/stop_sleep_proxy, lodestone_start/stop_remote_api, shared broadcast event channel, both CI/Android green
 
-REMAINING: Fabric/Quilt/Forge/NeoForge (installer orchestration, unverifiable sha256); M5 depth items (JLI_Launch dlopen, RCON metrics, Geyser); Engine wiring (FFI exposes sleep/remote to Android)
+REMAINING: Android notification / QS tile / Glance widget surfaces (spec 5); M5 depth items (JLI_Launch dlopen, RCON metrics, Geyser crossplay).

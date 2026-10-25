@@ -1,11 +1,10 @@
 {
-  "goal": "Build Lodestone spec-first: Rust core (M0 done), then runtime provisioning from the Termux repo (M1), Paper provider (M2), Android shell",
-  "state": "M0-M5 complete. Spec 4.12 (sleep proxy) + 4.13 (remote API) done. 96 lib tests green. CI + Android workflows green.",
+  "goal": "Complete Lodestone (Android-first Minecraft Java server manager per lodestone.md) — all spec scope (M0–M5 + extras) implemented and CI-green.",
+  "state": "M0-M5 complete. Fabric/Quilt/Forge/NeoForge providers built + live-API verified (103 lib tests). FFI wiring for sleep proxy + remote API done and CI/Android green. Remaining: Android surfaces (spec 5).",
   "last_actions": [
-    "Fixed tunnel stub shebang for CI portability (a001e58)",
-    "Sleep-when-empty proxy (spec 4.12): MC status/login protocol, SleepingSession, wake hook, PROXY v1, IdleTracker (1ba9151)",
-    "Remote management API (spec 4.13): hand-rolled HTTP/1.1 + WebSocket, bearer token auth with attempt lockout, LAN-only bind policy (827c2a5)",
-    "All CI workflows green after both milestones"
+    "Fabric/Quilt/Forge/NeoForge providers with live-API verification, fixtures, sha1/sha256 gate-first (3ed6f02), 103 lib tests green",
+    "FFI wiring: lodestone_start_sleep_proxy / lodestone_stop_sleep_proxy / lodestone_start_remote_api / lodestone_stop_remote_api exposed via lodestone-ffi C ABI; wake/sleep hooks emit events; shared broadcast event channel wired into emit() (b1494cc)",
+    "Both CI and Android workflows green on commit b1494cc"
   ],
   "extras": [
     "config (ServerProperties + TuningProfile, paper YAML, apply_to_instance)",
@@ -15,47 +14,15 @@
     "crash analysis (exception extraction, remedy_for map)",
     "tunnel manager (playit fallback, daemon process control, address parse)",
     "sleep proxy (spec 4.12): MC status/login protocol, wake hook, PROXY v1, IdleTracker",
-    "remote API (spec 4.13): HTTP+WS, bearer auth, attempt lockout, LAN-only"
+    "remote API (spec 4.13): HTTP+WS, bearer auth, attempt lockout, LAN-only",
+    "catalog providers (4.1): vanilla, paper, purpur, fabric, quilt, forge, neoforge — all live-API verified + checksum-gated"
   ],
   "next": [
-    "Fabric/Quilt/Forge/NeoForge installer orchestration (deferred - sha256 unverifiable)",
-    "M5 depth: JLI_Launch dlopen, RCON metrics, Geyser/Bedrock crossplay",
-    "Engine wiring: expose sleep/remote via FFI, wire into Android service lifecycle",
-    "Android notification/widget/tile surfaces (spec 5)"
+    "Android surfaces: notification upgrade with server status, Quick Settings tile, Glance home-screen widget (spec 5)",
+    "M5 depth: JLI_Launch dlopen, RCON metrics, Geyser/Bedrock crossplay (deferred)",
   ],
   "blocked": [],
   "milestone": "all",
-  "m1": {
-    "commit": "be4f1db",
-    "status": "core-provisioning-built",
-    "notes": [
-      "repo.rs apt parser",
-      "dpkg version compare",
-      "resolver w/ skip-set+OR+pins",
-      "deb ar/xz/tar extract prefix-strip",
-      "InRelease OpenPGP verify (rpgp 0.21) embedded autobuilds+grimler keys",
-      "provision.rs orchestrator+meta.toml+truststore",
-      "15/15 termux unit tests in 0.17s (RUST_TEST_THREADS=1)"
-    ]
-  },
   "test_policy": "cargo check per delta; RUST_TEST_THREADS=1 module-filtered lib tests only at milestones; heavy E2E gated by user; verify via gh run watch after push",
-  "m3": {
-    "commit": "5fcd1ee",
-    "platform": "PosixPlatform",
-    "runner": "InstanceRunner",
-    "tests": "6/6 real fork/exec"
-  },
-  "m4": {
-    "commit": "0b0addc",
-    "crate": "lodestone-ffi (cdylib+rlib)",
-    "surface": "engine/catalog/instances/lifecycle/diagnostics",
-    "udl": "crates/lodestone-ffi/udl/lodestone.udl",
-    "tests": "1 smoke"
-  },
-  "m5": {
-    "status": "scaffold+CI green",
-    "native_build": "cargo-ndk arm64-v8a via CI",
-    "apk": "assembleDebug green",
-    "ci": "https://github.com/NaveenSingh9999/lodestone/actions"
-  }
+  "ci": "https://github.com/NaveenSingh9999/lodestone/actions"
 }
