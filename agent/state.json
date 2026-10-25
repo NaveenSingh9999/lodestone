@@ -1,9 +1,10 @@
 {
   "goal": "Complete Lodestone (Android-first Minecraft Java server manager per lodestone.md) — all spec scope (M0–M5 + extras) implemented and CI-green.",
-  "state": "All spec scope complete: M0–M5, catalog providers (4.1), sleep proxy (4.12), remote API (4.13), FFI wiring, Android spec 5 surfaces, and sleep proxy + remote API wired into Android service lifecycle. 103 lib tests green. CI + Android workflows green.",
+  "state": "All spec scope complete: M0–M5, catalog providers (4.1), sleep proxy (4.12), remote API (4.13), FFI wiring, Android spec 5 surfaces, Android service lifecycle integration, RCON metrics (4.3 depth). 109 lib tests green. CI + Android workflows green.",
   "last_actions": [
-    "Wired sleep proxy + remote API into LodestoneService: remote API starts on 127.0.0.1:7300 (LAN-only, token auth) on service create; sleep proxy auto-starts on 0.0.0.0:25565 → 127.0.0.1:25565 when an instance goes Running, stops when all Stopped; notification actions to start/stop sleep proxy (85057df)",
-    "Both CI (40223226133) and Android (40223226122) workflows green on commit 85057df"
+    "RCON metrics collector (spec 4.3 depth): rcon.rs Source RCON client (connect/auth/execute, little-endian packet framing), metrics.rs MetricsCollector (polls 'list' for player count → MetricsSample), LaunchSpec rcon_port/rcon_password fields, InstanceRunner with_metrics_callback that polls RCON every 30s when server is Ready; 6 new tests",
+    "Fixed FFI LaunchSpec initializer for new rcon fields",
+    "Both CI (40227471770) and Android (40227471763) workflows green on commit 7dfd521"
   ],
   "extras": [
     "config (ServerProperties + TuningProfile, paper YAML, apply_to_instance)",
@@ -16,11 +17,12 @@
     "remote API (spec 4.13): HTTP+WS, bearer auth, attempt lockout, LAN-only",
     "catalog providers (4.1): vanilla, paper, purpur, fabric, quilt, forge, neoforge — all live-API verified + checksum-gated",
     "Android spec 5: notification status + start/stop actions, QS tile, Glance widget, StateStore shared state",
-    "Android service lifecycle integration: remote API + sleep proxy start/stop tied to service + instance state events"
+    "Android service lifecycle: remote API on 127.0.0.1:7300, sleep proxy auto-starts/stops with instance state",
+    "RCON metrics (4.3 depth): Source RCON client + MetricsCollector + InstanceRunner callback"
   ],
   "next": [
-    "M5 depth items (deferred): JLI_Launch dlopen, RCON metrics, Geyser/Bedrock crossplay",
-    "End-to-end testing on real device (Termux): install instance, start server, verify sleep proxy wake + remote API control"
+    "M5 depth items remaining: JLI_Launch dlopen, Geyser/Bedrock crossplay",
+    "Optional: end-to-end device testing on real Termux device (install instance, start server, verify sleep proxy wake + remote API + RCON metrics)"
   ],
   "blocked": [],
   "milestone": "all",

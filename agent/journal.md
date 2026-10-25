@@ -58,3 +58,12 @@
 - Sleep proxy auto-starts on 0.0.0.0:25565 → 127.0.0.1:25565 when any instance transitions to Running (via StateChanged event), and stops when all instances are Stopped.
 - Notification gained "Start Sleep Proxy"/"Stop Sleep Proxy" actions reflecting current proxy state.
 - Both CI and Android workflows green on commit 85057df.
+
+## 2026-10-25 — RCON metrics collector (spec 4.3 depth)
+
+- rcon.rs: Source RCON client over TCP. connect(authenticates with password), execute(command) returns server output. Packet framing: size(4 LE) + id(4 LE) + type(4 LE) + body + nulls. type: 2=client command, 0=server response, -1=auth failure.
+- metrics.rs: MetricsCollector polls RCON "list" command and parses player count into MetricsSample (timestamp, players_online; cpu/rss/tps/mspt left None pending server plugins or process introspection).
+- platform/mod.rs: LaunchSpec gains optional rcon_port: Option<u16> and rcon_password: Option<String> (Default → None).
+- supervisor/runner.rs: InstanceRunner gains with_metrics_callback(builder). When server reports Ready and RCON is configured, spawns a background task polling RCON every 30s and invoking the callback with each MetricsSample.
+- 6 new tests (4 RCON packet framing/auth, 2 list-output parsing). Total lib tests: 109.
+- Both CI and Android workflows green on commit 7dfd521.

@@ -20,4 +20,6 @@ DONE: Engine FFI wiring — lodestone_start/stop_sleep_proxy, lodestone_start/st
 DONE: Android spec 5 surfaces — notification with status + start/stop actions, Quick Settings tile, Glance home-screen widget (all read from core state via StateStore)
 DONE: Android service lifecycle integration — LodestoneService starts remote API on 127.0.0.1:7300 on create; auto-starts sleep proxy (0.0.0.0:25565 → 127.0.0.1:25565) when instance goes Running, stops when all Stopped; notification actions to start/stop sleep proxy
 
-REMAINING: M5 depth items (JLI_Launch dlopen, RCON metrics, Geyser crossplay). Optional: end-to-end device testing (install instance, start server, verify sleep proxy wake + remote API control on real Termux device).
+DONE: RCON metrics (4.3 depth) — Source RCON client + MetricsCollector + InstanceRunner callback, all CI/Android green
+
+REMAINING: M5 depth items (JLI_Launch dlopen, Geyser crossplay). Optional: end-to-end device testing on real Termux device.
