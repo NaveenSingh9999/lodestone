@@ -67,3 +67,13 @@
 - supervisor/runner.rs: InstanceRunner gains with_metrics_callback(builder). When server reports Ready and RCON is configured, spawns a background task polling RCON every 30s and invoking the callback with each MetricsSample.
 - 6 new tests (4 RCON packet framing/auth, 2 list-output parsing). Total lib tests: 109.
 - Both CI and Android workflows green on commit 7dfd521.
+
+## 2026-10-25 — JLI_Launch dlopen for Android JVM hosting (spec §5 depth)
+
+- New platform/android.rs: AndroidPlatform implements Platform trait. launch_server dlopen's libjli.so from the extracted JDK and calls JLI_Launch inside the :server service process (spec §2 decision, §5 server hosting, acceptance #10).
+- stdio redirected to pipes via dup2 on fds 0/1/2, bridged over ServerHandle channels (same pattern as PosixPlatform fork/exec).
+- find_libjli tries Android layout (lib/aarch64/libjli.so) then generic (lib/jli/libjli.so). build_jli_argv constructs ["java", "-jar", <jar>, ...args].
+- Wired into lodestone-ffi via cfg(target_os = "android"): AndroidPlatform vs PosixPlatform.
+- 3 new unit tests (argv construction, path validation, missing libjli). Total lib tests: 112.
+- Both CI and Android workflows green on commit 9174d23.
+- Note: JLI_Launch path is unverified on a physical device (residual acceptance gates: multi-hour soak, screen-off SIGKILL, 16 KB-page device test).

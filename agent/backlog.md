@@ -21,5 +21,6 @@ DONE: Android spec 5 surfaces — notification with status + start/stop actions,
 DONE: Android service lifecycle integration — LodestoneService starts remote API on 127.0.0.1:7300 on create; auto-starts sleep proxy (0.0.0.0:25565 → 127.0.0.1:25565) when instance goes Running, stops when all Stopped; notification actions to start/stop sleep proxy
 
 DONE: RCON metrics (4.3 depth) — Source RCON client + MetricsCollector + InstanceRunner callback, all CI/Android green
+DONE: JLI_Launch dlopen (spec §5 depth) — AndroidPlatform dlopen's libjli.so + calls JLI_Launch inside :server service process, piped stdio, wired into FFI via cfg(target_os = "android"), compiles for aarch64-linux-android, 3 tests
 
-REMAINING: M5 depth items (JLI_Launch dlopen, Geyser crossplay). Optional: end-to-end device testing on real Termux device.
+REMAINING: M5 depth items (Geyser crossplay). Optional: end-to-end device testing on real Termux device.
