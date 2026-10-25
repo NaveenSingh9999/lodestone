@@ -11,19 +11,28 @@
 
 use std::collections::BTreeMap;
 use std::ffi::{CStr, CString};
+use std::net::SocketAddr;
 use std::os::raw::{c_char, c_int};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use lodestone_core::catalog::paper::PaperProvider;
 use lodestone_core::catalog::types::Provider;
 use lodestone_core::catalog::vanilla::VanillaProvider;
 use lodestone_core::net::HttpsClient;
 use lodestone_core::platform::{LaunchSpec, PosixPlatform, validate_launch_spec};
+use lodestone_core::remote::{
+    ApiRequest, ApiResponse, RemoteApi as CoreRemoteApi, RemoteApiConfig as CoreRemoteApiConfig,
+    RemoteBackend,
+};
 use lodestone_core::runtime::termux::provision::{TermuxProvisioner, bootstrap_from_meta};
+use lodestone_core::sleep::{SleepConfig as CoreSleepConfig, SleepHook, SleepProxy, WakeHook};
 use lodestone_core::supervisor::InstancePolicy;
 use serde::Serialize;
 use tokio::runtime::Runtime;
+use tokio::sync::broadcast;
 
 #[derive(Serialize)]
 struct ServerTypeDto {
@@ -98,6 +107,9 @@ pub struct Engine {
     client: FfiClient,
     instances: Mutex<BTreeMap<String, InstanceRecord>>,
     event_cb: Mutex<Option<extern "C" fn(*const c_char)>>,
+    sleep_proxy_running: Mutex<Option<Arc<AtomicBool>>>,
+    remote_rt: Mutex<Option<Runtime>>,
+    event_tx: Mutex<Option<broadcast::Sender<lodestone_core::events::Event>>>,
 }
 
 thread_local! {
@@ -159,6 +171,9 @@ pub unsafe extern "C" fn lodestone_engine_new(data_dir: *const c_char) -> *mut E
         client,
         instances: Mutex::new(BTreeMap::new()),
         event_cb: Mutex::new(None),
+        sleep_proxy_running: Mutex::new(None),
+        remote_rt: Mutex::new(None),
+        event_tx: Mutex::new(Some(broadcast::channel(128).0)),
     });
     Box::into_raw(engine)
 }
@@ -215,6 +230,11 @@ fn emit(engine: &Engine, event: serde_json::Value) {
         unsafe {
             drop(CString::from_raw(cb_ptr));
         }
+    }
+    // fan out typed events to any remote API /events subscribers.
+    if let Ok(ev) = serde_json::from_value::<lodestone_core::events::Event>(event.clone()) {
+        let tx = engine.event_tx.lock().ok().and_then(|g| g.clone());
+        let _ = tx.map(|t| t.send(ev));
     }
 }
 
@@ -1271,5 +1291,398 @@ pub unsafe extern "C" fn lodestone_tunnel_start(
             set_error(e);
             1
         }
+    }
+}
+
+// ---------- sleep proxy (spec 4.12) ----------
+
+struct FfiWake {
+    engine_addr: usize,
+    running: Arc<AtomicBool>,
+}
+
+impl WakeHook for FfiWake {
+    fn wake(&self) {
+        // switch the proxy into passthrough mode + notify the shell so it can
+        // start the server instance.
+        self.running.store(true, Ordering::SeqCst);
+        let eng = unsafe { &*(self.engine_addr as *mut Engine) };
+        emit(eng, serde_json::json!({"event":"SleepWake","id":null}));
+    }
+}
+
+struct FfiSleep {
+    engine_addr: usize,
+    running: Arc<AtomicBool>,
+}
+
+impl SleepHook for FfiSleep {
+    fn sleep(&self) {
+        // switch the proxy back into sleeping mode. The shell owns stopping
+        // the actual server process; this just flips the proxy behaviour.
+        self.running.store(false, Ordering::SeqCst);
+        let eng = unsafe { &*(self.engine_addr as *mut Engine) };
+        emit(eng, serde_json::json!({"event":"SleepStarted","id":null}));
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lodestone_start_sleep_proxy(
+    engine: *mut Engine,
+    config_json: *const c_char,
+    bind_port: c_int,
+    server_host: *const c_char,
+    server_port: c_int,
+) -> c_int {
+    let Some(engine) = engine_ref(engine) else {
+        return 1;
+    };
+    let Some(cfg_str) = take_cstr(config_json) else {
+        set_error("config_json is null");
+        return 1;
+    };
+    let Some(server_host) = take_cstr(server_host) else {
+        set_error("server_host is null");
+        return 1;
+    };
+    #[derive(serde::Deserialize)]
+    struct Cfg {
+        #[serde(default = "default_motd")]
+        motd: String,
+        #[serde(default = "default_wake")]
+        wake_message: String,
+        #[serde(default = "default_idle")]
+        idle_minutes: u64,
+        #[serde(default)]
+        proxy_protocol: bool,
+    }
+    fn default_motd() -> String {
+        "Server is sleeping — join to wake it".to_string()
+    }
+    fn default_wake() -> String {
+        "Starting the server, retry shortly".to_string()
+    }
+    fn default_idle() -> u64 {
+        10
+    }
+    let cfg: Cfg = match serde_json::from_str(&cfg_str) {
+        Ok(c) => c,
+        Err(e) => {
+            set_error(format!("config parse: {e}"));
+            return 1;
+        }
+    };
+    let server: SocketAddr = match format!("{server_host}:{server_port}").parse() {
+        Ok(a) => a,
+        Err(e) => {
+            set_error(format!("server addr: {e}"));
+            return 1;
+        }
+    };
+    let bind: SocketAddr = match format!("0.0.0.0:{bind_port}").parse() {
+        Ok(a) => a,
+        Err(e) => {
+            set_error(format!("bind addr: {e}"));
+            return 1;
+        }
+    };
+    let running = Arc::new(AtomicBool::new(false));
+    let wake = Arc::new(FfiWake {
+        engine_addr: engine as *mut Engine as usize,
+        running: running.clone(),
+    });
+    let sleep = Arc::new(FfiSleep {
+        engine_addr: engine as *mut Engine as usize,
+        running: running.clone(),
+    });
+    let core_cfg = CoreSleepConfig {
+        motd: cfg.motd,
+        wake_message: cfg.wake_message,
+        idle_minutes: cfg.idle_minutes,
+        proxy_protocol: cfg.proxy_protocol,
+        protocol_version: 767,
+    };
+    let proxy = SleepProxy {
+        bind,
+        server,
+        cfg: core_cfg,
+        running: running.clone(),
+        wake,
+    };
+    if let Ok(mut g) = engine.sleep_proxy_running.lock() {
+        *g = Some(running.clone());
+    } else {
+        set_error("sleep_proxy lock poisoned");
+        return 1;
+    }
+    let idle_minutes = cfg.idle_minutes;
+    let server_addr = server;
+    engine.rt.spawn(async move {
+        let _ = proxy.run().await;
+    });
+    // lightweight idle watcher: while running, poll player count and sleep.
+    if idle_minutes > 0 {
+        let sleep = sleep.clone();
+        let running2 = running.clone();
+        engine.rt.spawn(async move {
+            let mut tracker = lodestone_core::sleep::IdleTracker::new(idle_minutes);
+            let mut last = false;
+            loop {
+                tokio::time::sleep(Duration::from_secs(30)).await;
+                if !running2.load(Ordering::SeqCst) {
+                    last = false;
+                    continue;
+                }
+                match lodestone_core::sleep::query_status(server_addr, Duration::from_secs(5)).await
+                {
+                    Ok((online, _)) => {
+                        if tracker.on_player_count(online) {
+                            sleep.sleep();
+                        }
+                        last = true;
+                    }
+                    Err(_) => {
+                        if last {
+                            sleep.sleep();
+                        }
+                        last = false;
+                    }
+                }
+            }
+        });
+    }
+    emit(
+        engine,
+        serde_json::json!({"event":"SleepProxyStarted","bind":bind_port}),
+    );
+    0
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lodestone_stop_sleep_proxy(engine: *mut Engine) -> c_int {
+    let Some(engine) = engine_ref(engine) else {
+        return 1;
+    };
+    if let Ok(mut g) = engine.sleep_proxy_running.lock() {
+        if let Some(r) = g.take() {
+            r.store(false, Ordering::SeqCst);
+        }
+        0
+    } else {
+        set_error("sleep_proxy lock poisoned");
+        1
+    }
+}
+
+// ---------- remote management API (spec 4.13) ----------
+
+/// Mirrors the section 3.3 command surface over HTTP/WebSocket.
+struct FfiBackend {
+    engine_addr: usize,
+    event_tx: broadcast::Sender<lodestone_core::events::Event>,
+}
+
+impl RemoteBackend for FfiBackend {
+    fn dispatch(&self, req: ApiRequest) -> ApiResponse {
+        let engine = unsafe { &*(self.engine_addr as *mut Engine) };
+        let instance_id = req
+            .args
+            .get("instance_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        match req.command.as_str() {
+            "ping" => ApiResponse {
+                ok: true,
+                data: serde_json::json!({}),
+            },
+            "list" => {
+                let g = engine.instances.lock().ok();
+                let list: Vec<serde_json::Value> = g
+                    .map(|g| {
+                        g.values()
+                            .map(|r| {
+                                serde_json::json!({
+                                    "id": r.id,
+                                    "server_type": r.server_type,
+                                    "version": r.version,
+                                    "state": r.state,
+                                })
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                ApiResponse {
+                    ok: true,
+                    data: serde_json::json!({"instances": list}),
+                }
+            }
+            "status" => {
+                let state_str = {
+                    let g = match engine.instances.lock() {
+                        Ok(g) => g,
+                        Err(_) => {
+                            return ApiResponse {
+                                ok: false,
+                                data: serde_json::json!({"error": "instances lock poisoned"}),
+                            };
+                        }
+                    };
+                    g.get(&instance_id)
+                        .map(|r| r.state.clone())
+                        .unwrap_or_else(|| "Stopped".to_string())
+                };
+                ApiResponse {
+                    ok: true,
+                    data: serde_json::json!({
+                        "instance_id": instance_id,
+                        "state": state_str,
+                    }),
+                }
+            }
+            "start" => {
+                let cstr = match CString::new(instance_id.as_str()) {
+                    Ok(c) => c,
+                    Err(_) => {
+                        return ApiResponse {
+                            ok: false,
+                            data: serde_json::json!({"error": "invalid instance id"}),
+                        };
+                    }
+                };
+                let rc = unsafe { lodestone_start(self.engine_addr as *mut Engine, cstr.as_ptr()) };
+                ApiResponse {
+                    ok: rc == 0,
+                    data: serde_json::json!({}),
+                }
+            }
+            "stop" => {
+                let cstr = match CString::new(instance_id.as_str()) {
+                    Ok(c) => c,
+                    Err(_) => {
+                        return ApiResponse {
+                            ok: false,
+                            data: serde_json::json!({"error": "invalid instance id"}),
+                        };
+                    }
+                };
+                let rc = unsafe { lodestone_stop(self.engine_addr as *mut Engine, cstr.as_ptr()) };
+                ApiResponse {
+                    ok: rc == 0,
+                    data: serde_json::json!({}),
+                }
+            }
+            "restart" => {
+                let cstr = match CString::new(instance_id.as_str()) {
+                    Ok(c) => c,
+                    Err(_) => {
+                        return ApiResponse {
+                            ok: false,
+                            data: serde_json::json!({"error": "invalid instance id"}),
+                        };
+                    }
+                };
+                let _ = unsafe { lodestone_stop(self.engine_addr as *mut Engine, cstr.as_ptr()) };
+                let rc = unsafe { lodestone_start(self.engine_addr as *mut Engine, cstr.as_ptr()) };
+                ApiResponse {
+                    ok: rc == 0,
+                    data: serde_json::json!({}),
+                }
+            }
+            other => ApiResponse {
+                ok: false,
+                data: serde_json::json!({"error": format!("unknown command: {other}")}),
+            },
+        }
+    }
+
+    fn subscribe(&self) -> broadcast::Receiver<lodestone_core::events::Event> {
+        self.event_tx.subscribe()
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lodestone_start_remote_api(
+    engine: *mut Engine,
+    token: *const c_char,
+    bind_port: c_int,
+    allow_wan: c_int,
+) -> c_int {
+    let Some(engine) = engine_ref(engine) else {
+        return 1;
+    };
+    let token = take_cstr(token).unwrap_or_default();
+    let bind = if allow_wan != 0 {
+        format!("0.0.0.0:{bind_port}")
+    } else {
+        format!("127.0.0.1:{bind_port}")
+    };
+    let bind: SocketAddr = match bind.parse() {
+        Ok(a) => a,
+        Err(e) => {
+            set_error(format!("bind addr: {e}"));
+            return 1;
+        }
+    };
+    let event_tx = match engine.event_tx.lock().ok().and_then(|g| g.clone()) {
+        Some(t) => t,
+        None => {
+            set_error("no event broadcast channel");
+            return 1;
+        }
+    };
+    let backend = Box::new(FfiBackend {
+        engine_addr: engine as *mut Engine as usize,
+        event_tx,
+    });
+    let cfg = CoreRemoteApiConfig {
+        bind,
+        token,
+        allow_wan: allow_wan != 0,
+        max_attempts: 5,
+        lockout: Duration::from_secs(300),
+    };
+    let api = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        CoreRemoteApi::new(cfg, backend)
+    })) {
+        Ok(a) => a,
+        Err(_) => {
+            set_error("remote api config rejected");
+            return 1;
+        }
+    };
+    let rt = match Runtime::new() {
+        Ok(r) => r,
+        Err(e) => {
+            set_error(format!("remote runtime: {e}"));
+            return 1;
+        }
+    };
+    rt.spawn(api.run());
+    if let Ok(mut g) = engine.remote_rt.lock() {
+        *g = Some(rt);
+    } else {
+        set_error("remote_rt lock poisoned");
+        return 1;
+    }
+    emit(
+        engine,
+        serde_json::json!({"event":"RemoteApiStarted","bind":bind_port}),
+    );
+    0
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lodestone_stop_remote_api(engine: *mut Engine) -> c_int {
+    let Some(engine) = engine_ref(engine) else {
+        return 1;
+    };
+    if let Ok(mut g) = engine.remote_rt.lock() {
+        g.take();
+        emit(engine, serde_json::json!({"event":"RemoteApiStopped"}));
+        0
+    } else {
+        set_error("remote_rt lock poisoned");
+        1
     }
 }
