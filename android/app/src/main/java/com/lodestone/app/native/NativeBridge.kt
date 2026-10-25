@@ -27,6 +27,7 @@ interface LodestoneLib : Library {
     fun lodestone_stop_sleep_proxy(engine: Pointer): Int
     fun lodestone_start_remote_api(engine: Pointer, token: String, bindPort: Int, allowWan: Int): Int
     fun lodestone_stop_remote_api(engine: Pointer): Int
+    fun lodestone_enable_crossplay(engine: Pointer, instanceId: String, optionsJson: String): Int
 }
 
 fun interface EventCallback {
@@ -82,4 +83,10 @@ object NativeBridge {
     ): Int = lib.lodestone_start_remote_api(engine, token, bindPort, allowWan)
 
     fun stopRemoteApi(engine: Pointer): Int = lib.lodestone_stop_remote_api(engine)
+
+    fun enableCrossplay(
+        engine: Pointer,
+        instanceId: String,
+        optionsJson: String
+    ): Int = lib.lodestone_enable_crossplay(engine, instanceId, optionsJson)
 }

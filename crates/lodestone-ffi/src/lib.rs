@@ -21,6 +21,8 @@ use std::time::Duration;
 use lodestone_core::catalog::paper::PaperProvider;
 use lodestone_core::catalog::types::Provider;
 use lodestone_core::catalog::vanilla::VanillaProvider;
+use lodestone_core::content::ModrinthClient;
+use lodestone_core::crossplay::{self, CrossplayOptions};
 use lodestone_core::net::HttpsClient;
 use lodestone_core::platform::{LaunchSpec, validate_launch_spec};
 
@@ -1691,5 +1693,95 @@ pub unsafe extern "C" fn lodestone_stop_remote_api(engine: *mut Engine) -> c_int
     } else {
         set_error("remote_rt lock poisoned");
         1
+    }
+}
+
+// ---------- geyser / bedrock crossplay (spec 4.11 optional switch) ----------
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lodestone_enable_crossplay(
+    engine: *mut Engine,
+    instance_id: *const c_char,
+    options_json: *const c_char,
+) -> c_int {
+    let Some(engine) = engine_ref(engine) else {
+        return 1;
+    };
+    let Some(id) = take_cstr(instance_id) else {
+        set_error("instance_id is null");
+        return 1;
+    };
+    let opts_str = take_cstr(options_json).unwrap_or_else(|| "{}".to_string());
+
+    #[derive(serde::Deserialize)]
+    struct Opts {
+        #[serde(default)]
+        geyser: bool,
+        #[serde(default)]
+        floodgate: bool,
+        #[serde(default)]
+        via_version: bool,
+        #[serde(default)]
+        via_backwards: bool,
+    }
+    let opts: Opts = match serde_json::from_str(&opts_str) {
+        Ok(o) => o,
+        Err(e) => {
+            set_error(format!("options parse: {e}"));
+            return 1;
+        }
+    };
+
+    // Look up the instance record.
+    let (server_type, version, work_dir) = {
+        let g = match engine.instances.lock() {
+            Ok(g) => g,
+            Err(_) => {
+                set_error("instances lock poisoned");
+                return 1;
+            }
+        };
+        match g.get(&id) {
+            Some(r) => (r.server_type.clone(), r.version.clone(), r.work_dir.clone()),
+            None => {
+                set_error(format!("instance {id} not found"));
+                return 1;
+            }
+        }
+    };
+
+    let options = CrossplayOptions {
+        geyser: opts.geyser,
+        floodgate: opts.floodgate,
+        via_version: opts.via_version,
+        via_backwards: opts.via_backwards,
+    };
+
+    let client = engine.client.clone();
+    let mc = ModrinthClient::new(client);
+    let rt = &engine.rt;
+    match rt.block_on(crossplay::install_crossplay(
+        &mc,
+        &server_type,
+        &version,
+        &work_dir,
+        options,
+    )) {
+        Ok(result) => {
+            emit(
+                engine,
+                serde_json::json!({
+                    "event": "CrossplayInstalled",
+                    "id": id,
+                    "installed": result.installed,
+                    "skipped": result.skipped,
+                }),
+            );
+            0
+        }
+        Err(e) => {
+            set_error(format!("crossplay: {e}"));
+            1
+        }
     }
 }
