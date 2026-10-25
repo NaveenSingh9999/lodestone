@@ -21,9 +21,17 @@ class LodestoneService : Service() {
         const val NOTIF_ID = 1
         const val ACTION_START_ALL = "com.lodestone.app.ACTION_START_ALL"
         const val ACTION_STOP_ALL = "com.lodestone.app.ACTION_STOP_ALL"
+        const val ACTION_START_SLEEP_PROXY = "com.lodestone.app.ACTION_START_SLEEP_PROXY"
+        const val ACTION_STOP_SLEEP_PROXY = "com.lodestone.app.ACTION_STOP_SLEEP_PROXY"
+        // Default Minecraft Java port used by the sleep proxy upstream target.
+        const val SLEEP_PROXY_BIND_PORT = 25565
+        const val SLEEP_PROXY_SERVER_PORT = 25565
+        const val REMOTE_API_PORT = 7300
     }
 
     private var engine: com.sun.jna.Pointer? = null
+    private var sleepProxyActive = false
+    private var remoteApiToken: String? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -34,19 +42,25 @@ class LodestoneService : Service() {
             NativeBridge.registerEventCallback(e) { eventJson ->
                 handleEvent(eventJson)
             }
+            // Remote management API on loopback only (spec 4.13 LAN-only policy).
+            remoteApiToken = java.util.UUID.randomUUID().toString()
+            NativeBridge.startRemoteApi(e, remoteApiToken!!, REMOTE_API_PORT, 0 /* allow_wan=false */)
         }
-        startForeground(NOTIF_ID, buildNotification(StateStore.snapshot()))
+        startForeground(NOTIF_ID, buildNotification(StateStore.snapshot(), sleepProxyActive))
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START_ALL -> startAllInstances()
             ACTION_STOP_ALL -> stopAllInstances()
+            ACTION_START_SLEEP_PROXY -> startSleepProxy()
+            ACTION_STOP_SLEEP_PROXY -> stopSleepProxy()
         }
         return START_STICKY
     }
 
     override fun onDestroy() {
+        stopSleepProxy()
         engine?.let { e -> NativeBridge.engineFree(e) }
         engine = null
         super.onDestroy()
@@ -65,6 +79,12 @@ class LodestoneService : Service() {
                     val state = data.getString("state")
                     StateStore.update(id, state)
                     updateNotification()
+                    // Auto-start sleep proxy when a server is running; stop when all stopped.
+                    if (state == "Running" && !sleepProxyActive) {
+                        startSleepProxy()
+                    } else if (state == "Stopped" && !StateStore.anyRunning()) {
+                        stopSleepProxy()
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -98,12 +118,36 @@ class LodestoneService : Service() {
         }
     }
 
-    private fun updateNotification() {
-        val mgr = getSystemService(NotificationManager::class.java) as NotificationManager
-        mgr.notify(NOTIF_ID, buildNotification(StateStore.snapshot()))
+    private fun startSleepProxy() {
+        engine?.let { e ->
+            val rc = NativeBridge.startSleepProxy(
+                e,
+                "{}", /* default config JSON */
+                SLEEP_PROXY_BIND_PORT,
+                "127.0.0.1",
+                SLEEP_PROXY_SERVER_PORT
+            )
+            if (rc == 0) {
+                sleepProxyActive = true
+                updateNotification()
+            }
+        }
     }
 
-    private fun buildNotification(states: Map<String, String>): Notification {
+    private fun stopSleepProxy() {
+        engine?.let { e ->
+            NativeBridge.stopSleepProxy(e)
+        }
+        sleepProxyActive = false
+        updateNotification()
+    }
+
+    private fun updateNotification() {
+        val mgr = getSystemService(NotificationManager::class.java) as NotificationManager
+        mgr.notify(NOTIF_ID, buildNotification(StateStore.snapshot(), sleepProxyActive))
+    }
+
+    private fun buildNotification(states: Map<String, String>, proxyActive: Boolean): Notification {
         val summary = when {
             states.isEmpty() -> "No instances"
             else -> states.entries.joinToString(", ") { "${it.key}=${it.value}" }
@@ -115,6 +159,9 @@ class LodestoneService : Service() {
         val stopIntent = Intent(this, LodestoneService::class.java).apply {
             action = ACTION_STOP_ALL
         }
+        val proxyIntent = Intent(this, LodestoneService::class.java).apply {
+            action = if (proxyActive) ACTION_STOP_SLEEP_PROXY else ACTION_START_SLEEP_PROXY
+        }
         val pendingFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             PendingIntent.FLAG_IMMUTABLE
         } else {
@@ -122,14 +169,20 @@ class LodestoneService : Service() {
         }
         val startPending = PendingIntent.getService(this, 100, startIntent, pendingFlags)
         val stopPending = PendingIntent.getService(this, 101, stopIntent, pendingFlags)
+        val proxyPending = PendingIntent.getService(this, 102, proxyIntent, pendingFlags)
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Lodestone")
-            .setContentText(summary)
+            .setContentText(summary + (if (proxyActive) " • sleep proxy on" else ""))
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setOngoing(true)
             .addAction(android.R.drawable.ic_media_play, "Start All", startPending)
             .addAction(android.R.drawable.ic_media_pause, "Stop All", stopPending)
+            .addAction(
+                android.R.drawable.ic_menu_compass,
+                if (proxyActive) "Stop Sleep Proxy" else "Start Sleep Proxy",
+                proxyPending
+            )
             .build()
     }
 
