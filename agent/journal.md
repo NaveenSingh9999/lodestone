@@ -123,3 +123,17 @@
 - Updated app icon from /sdcard/Download/Apple-Symbols-Font/ PNG (2896x2896) converted to mipmap at all 5 densities.
 - Both CI and Android workflows green on commit b84a06a (Android run 40277047424).
 - Production APK rebuilt: 13MB at /sdcard/Download/lodestone-release.apk.
+
+## 2026-10-26 — Comprehensive UI overhaul + production APK
+
+- Rewrote MainActivity.kt with 5-tab navigation: Dashboard, Instances, Console, Settings, Access.
+- Dashboard: shows instance status, refresh, start service button.
+- Instances: create instance (server type + version), list instances, start/stop/delete per instance.
+- Console: live output via AppState listener, command input with Send button.
+- Settings: placeholder for server settings, tuning profiles, device info.
+- Access: Bedrock crossplay toggle, remote API token display.
+- Shared AppState (SharedPreferences + in-memory buffers) for live console output and instance state.
+- EngineHolder for shared engine between activity and service.
+- Fixed LodestoneService heredoc terminator issue (was causing syntax error).
+- Both CI and Android workflows green on commit a304521 (Android run 40280803621).
+- Production APK rebuilt: 13MB at /sdcard/Download/lodestone-release.apk.

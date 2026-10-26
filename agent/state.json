@@ -1,11 +1,12 @@
 {
   "goal": "Complete Lodestone (Android-first Minecraft Java server manager per lodestone.md) — all spec scope (M0–M5 + extras) implemented and CI-green.",
-  "state": "ALL SPEC SCOPE COMPLETE + PRODUCTION APK BUILT AND SIGNED. M0–M5, all catalog providers, sleep proxy, remote API, FFI wiring, Android spec 5 surfaces, RCON metrics, JLI_Launch dlopen, Geyser crossplay (with UI toggle), app logo, production signing config, crash fixes (empty res/values, error handling, notification icon). 118 lib tests green. CI + Android workflows green. Release APK (13MB, signed) at /sdcard/Download/lodestone-release.apk.",
+  "state": "ALL SPEC SCOPE COMPLETE + PRODUCTION APK BUILT AND SIGNED. Comprehensive UI: Dashboard, Instances, Console, Settings, Access screens with instance creation, start/stop, console commands, live state updates via AppState. 118 lib tests green. CI + Android workflows green. Release APK (13MB, signed) at /sdcard/Download/lodestone-release.apk.",
   "last_actions": [
-    "Fixed silent crash: added res/values/strings.xml + colors.xml (values dir was empty), error handling in MainActivity and LodestoneService, notification icon (ic_notification drawable)",
-    "Updated app icon from /sdcard/Download/Apple-Symbols-Font/ PNG (2896x2896) converted to mipmap at all densities",
-    "Simplified MainActivity to remove NativeBridge calls (potential crash source)",
-    "Both CI and Android workflows green on commit b84a06a (Android run 40277047424)"
+    "Comprehensive UI overhaul: Dashboard (instance status, start/stop all), Instances (create with server type + version, list, start/stop/delete), Console (live output, command input), Settings, Access (crossplay toggle, remote API token)",
+    "Shared AppState with live console output buffer and instance state tracking",
+    "EngineHolder for shared engine between activity and service",
+    "Fixed LodestoneService heredoc terminator issue",
+    "Both CI and Android workflows green on commit a304521 (Android run 40280803621)"
   ],
   "extras": [
     "config (ServerProperties + TuningProfile, paper YAML, apply_to_instance)",
@@ -24,6 +25,7 @@
     "Geyser/Bedrock crossplay (4.11 optional): crossplay.rs + AccessScreen toggle + NativeBridge binding, 7 tests",
     "App logo: /sdcard/Download/Apple-Symbols-Font/ PNG converted to mipmap icons at all densities",
     "Production APK: 13MB signed release build with keystore (pass: lodestone123, alias: lodestone)",
+    "Comprehensive UI: Dashboard, Instances, Console, Settings, Access screens with instance creation, start/stop, console commands",
     "Crash fix: added res/values/strings.xml + colors.xml, error handling in MainActivity/LodestoneService, notification icon (ic_notification drawable)"
   ],
   "next": [
