@@ -9,7 +9,6 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import com.lodestone.app.R
 import com.lodestone.app.native.NativeBridge
 import com.lodestone.app.state.StateStore
 import org.json.JSONArray
@@ -30,7 +29,6 @@ class LodestoneService : Service() {
         const val ACTION_STOP_ALL = "com.lodestone.app.ACTION_STOP_ALL"
         const val ACTION_START_SLEEP_PROXY = "com.lodestone.app.ACTION_START_SLEEP_PROXY"
         const val ACTION_STOP_SLEEP_PROXY = "com.lodestone.app.ACTION_STOP_SLEEP_PROXY"
-        // Default Minecraft Java port used by the sleep proxy upstream target.
         const val SLEEP_PROXY_BIND_PORT = 25565
         const val SLEEP_PROXY_SERVER_PORT = 25565
         const val REMOTE_API_PORT = 7300
@@ -42,34 +40,60 @@ class LodestoneService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        createChannel()
-        StateStore.init(this)
-        engine = NativeBridge.engineNew(cacheDir.absolutePath)
-        engine?.let { e ->
-            NativeBridge.registerEventCallback(e) { eventJson ->
-                handleEvent(eventJson)
+        try {
+            android.util.Log.d("Lodestone", "Service onCreate starting")
+            createChannel()
+            StateStore.init(this)
+            // Start foreground immediately to avoid ANR
+            startForeground(NOTIF_ID, buildNotification(StateStore.snapshot(), false))
+            android.util.Log.d("Lodestone", "Foreground started, creating engine")
+            engine = NativeBridge.engineNew(cacheDir.absolutePath)
+            android.util.Log.d("Lodestone", "Engine created: ${engine != null}")
+            engine?.let { e ->
+                try {
+                    NativeBridge.registerEventCallback(e) { eventJson ->
+                        handleEvent(eventJson)
+                    }
+                    remoteApiToken = java.util.UUID.randomUUID().toString()
+                    NativeBridge.startRemoteApi(e, remoteApiToken!!, REMOTE_API_PORT, 0)
+                    android.util.Log.d("Lodestone", "Remote API started")
+                } catch (ex: Throwable) {
+                    android.util.Log.e("Lodestone", "Failed to init engine features", ex)
+                }
             }
-            // Remote management API on loopback only (spec 4.13 LAN-only policy).
-            remoteApiToken = java.util.UUID.randomUUID().toString()
-            NativeBridge.startRemoteApi(e, remoteApiToken!!, REMOTE_API_PORT, 0 /* allow_wan=false */)
+            android.util.Log.d("Lodestone", "Service onCreate complete")
+        } catch (e: Throwable) {
+            android.util.Log.e("Lodestone", "Service onCreate failed", e)
+            try {
+                startForeground(NOTIF_ID, buildNotification(emptyMap(), false))
+            } catch (ex: Throwable) {
+                android.util.Log.e("Lodestone", "Failed to start foreground", ex)
+            }
         }
-        startForeground(NOTIF_ID, buildNotification(StateStore.snapshot(), sleepProxyActive))
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
-            ACTION_START_ALL -> startAllInstances()
-            ACTION_STOP_ALL -> stopAllInstances()
-            ACTION_START_SLEEP_PROXY -> startSleepProxy()
-            ACTION_STOP_SLEEP_PROXY -> stopSleepProxy()
+        try {
+            when (intent?.action) {
+                ACTION_START_ALL -> startAllInstances()
+                ACTION_STOP_ALL -> stopAllInstances()
+                ACTION_START_SLEEP_PROXY -> startSleepProxy()
+                ACTION_STOP_SLEEP_PROXY -> stopSleepProxy()
+            }
+        } catch (e: Throwable) {
+            android.util.Log.e("Lodestone", "onStartCommand failed", e)
         }
         return START_STICKY
     }
 
     override fun onDestroy() {
-        stopSleepProxy()
-        engine?.let { e -> NativeBridge.engineFree(e) }
-        engine = null
+        try {
+            stopSleepProxy()
+            engine?.let { e -> NativeBridge.engineFree(e) }
+            engine = null
+        } catch (e: Throwable) {
+            android.util.Log.e("Lodestone", "onDestroy failed", e)
+        }
         super.onDestroy()
     }
 
@@ -86,7 +110,6 @@ class LodestoneService : Service() {
                     val state = data.getString("state")
                     StateStore.update(id, state)
                     updateNotification()
-                    // Auto-start sleep proxy when a server is running; stop when all stopped.
                     if (state == "Running" && !sleepProxyActive) {
                         startSleepProxy()
                     } else if (state == "Stopped" && !StateStore.anyRunning()) {
@@ -109,7 +132,7 @@ class LodestoneService : Service() {
                 NativeBridge.start(e, id)
             }
         } catch (ex: Exception) {
-            // ignore parse errors
+            android.util.Log.e("Lodestone", "startAllInstances failed", ex)
         }
     }
 
@@ -123,37 +146,49 @@ class LodestoneService : Service() {
                 NativeBridge.stop(e, id)
             }
         } catch (ex: Exception) {
-            // ignore parse errors
+            android.util.Log.e("Lodestone", "stopAllInstances failed", ex)
         }
     }
 
     private fun startSleepProxy() {
         engine?.let { e ->
-            val rc = NativeBridge.startSleepProxy(
-                e,
-                "{}", /* default config JSON */
-                SLEEP_PROXY_BIND_PORT,
-                "127.0.0.1",
-                SLEEP_PROXY_SERVER_PORT
-            )
-            if (rc == 0) {
-                sleepProxyActive = true
-                updateNotification()
+            try {
+                val rc = NativeBridge.startSleepProxy(
+                    e,
+                    "{}",
+                    SLEEP_PROXY_BIND_PORT,
+                    "127.0.0.1",
+                    SLEEP_PROXY_SERVER_PORT
+                )
+                if (rc == 0) {
+                    sleepProxyActive = true
+                    updateNotification()
+                }
+            } catch (ex: Throwable) {
+                android.util.Log.e("Lodestone", "startSleepProxy failed", ex)
             }
         }
     }
 
     private fun stopSleepProxy() {
         engine?.let { e ->
-            NativeBridge.stopSleepProxy(e)
+            try {
+                NativeBridge.stopSleepProxy(e)
+            } catch (ex: Throwable) {
+                android.util.Log.e("Lodestone", "stopSleepProxy failed", ex)
+            }
         }
         sleepProxyActive = false
         updateNotification()
     }
 
     private fun updateNotification() {
-        val mgr = getSystemService(NotificationManager::class.java) as NotificationManager
-        mgr.notify(NOTIF_ID, buildNotification(StateStore.snapshot(), sleepProxyActive))
+        try {
+            val mgr = getSystemService(NotificationManager::class.java) as NotificationManager
+            mgr.notify(NOTIF_ID, buildNotification(StateStore.snapshot(), sleepProxyActive))
+        } catch (e: Throwable) {
+            android.util.Log.e("Lodestone", "updateNotification failed", e)
+        }
     }
 
     private fun buildNotification(states: Map<String, String>, proxyActive: Boolean): Notification {
