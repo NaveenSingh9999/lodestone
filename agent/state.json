@@ -1,11 +1,10 @@
 {
   "goal": "Complete Lodestone (Android-first Minecraft Java server manager per lodestone.md) — all spec scope (M0–M5 + extras) implemented and CI-green.",
-  "state": "All spec scope complete: M0–M5, catalog providers (4.1), sleep proxy (4.12), remote API (4.13), FFI wiring, Android spec 5 surfaces, Android service lifecycle integration, RCON metrics (4.3 depth), JLI_Launch dlopen (spec §5 depth), Geyser/Bedrock crossplay (4.11 optional switch), Geyser wired to Android UI (Access screen toggle), app logo (mipmap icons from logo.svg). 118 lib tests green. CI + Android workflows green.",
+  "state": "ALL SPEC SCOPE COMPLETE + PRODUCTION APK BUILT AND SIGNED. M0–M5, all catalog providers, sleep proxy, remote API, FFI wiring, Android spec 5 surfaces, RCON metrics, JLI_Launch dlopen, Geyser crossplay (with UI toggle), app logo, production signing config. 118 lib tests green. CI + Android workflows green. Release APK (12MB, signed with lodestone.keystore) available at /sdcard/Download/lodestone-release.apk.",
   "last_actions": [
-    "Wired Geyser crossplay to Android UI: AccessScreen.kt with crossplay toggle calling NativeBridge.enableCrossplay; MainActivity updated with engine pointer + Access navigation",
-    "App logo: converted /sdcard/Download/logo.svg to mipmap PNGs at all densities (mdpi/hdpi/xhdpi/xxhdpi/xxxhdpi) + round variants; manifest icon/roundIcon attributes set",
-    "Fixed CrossplayComponent serde::Serialize derive for FFI emit",
-    "Both CI (40237475738) and Android (40237475731) workflows green on commit aca0d5d"
+    "Fixed Kotlin compilation errors: removed duplicate LodestoneWidgetReceiver, fixed Pointer nullability in LodestoneService, fixed QsTileService TileService API, simplified Glance widget",
+    "Production APK built and signed: 12MB, available at /sdcard/Download/lodestone-release.apk",
+    "Both CI and Android workflows green on commit 1fda8db (Android run 40269686897)"
   ],
   "extras": [
     "config (ServerProperties + TuningProfile, paper YAML, apply_to_instance)",
@@ -22,11 +21,11 @@
     "RCON metrics (4.3 depth): Source RCON client + MetricsCollector + InstanceRunner callback",
     "JLI_Launch dlopen (spec §5 depth): AndroidPlatform hosts JVM via dlopen(libjli.so)+JLI_Launch with piped stdio, wired into FFI via cfg, 3 tests",
     "Geyser/Bedrock crossplay (4.11 optional): crossplay.rs + AccessScreen toggle + NativeBridge binding, 7 tests",
-    "App logo: /sdcard/Download/logo.svg converted to mipmap icons at all densities"
+    "App logo: /sdcard/Download/logo.svg converted to mipmap icons at all densities",
+    "Production APK: 12MB signed release build with keystore (pass: lodestone123, alias: lodestone)"
   ],
   "next": [
-    "Optional: end-to-end device testing on real Termux device",
-    "Optional: wire Geyser crossplay switch into Android UI Access screen (already done)"
+    "Optional: end-to-end device testing on real Termux device (install instance, start server, verify sleep proxy wake + remote API + RCON metrics + JLI_Launch JVM hosting + Geyser crossplay)"
   ],
   "blocked": [],
   "milestone": "all",

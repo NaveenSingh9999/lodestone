@@ -95,3 +95,12 @@
 - App logo: /sdcard/Download/logo.svg (official Lodestone logo) converted via rsvg-convert to mipmap PNGs at all densities (48/72/96/144/192px) plus round variants; manifest updated with android:icon and android:roundIcon.
 - Fixed CrossplayComponent serde::Serialize derive (needed by FFI emit).
 - Both CI and Android workflows green on commit aca0d5d.
+
+## 2026-10-26 — Production APK build + app polish
+
+- Fixed Kotlin compilation errors: removed duplicate LodestoneWidgetReceiver, fixed Pointer nullability in LodestoneService, fixed QsTileService TileService API, simplified Glance widget to display-only.
+- Production APK built and signed in CI: 12MB, available at /sdcard/Download/lodestone-release.apk.
+- Keystore: lodestone.keystore (PKCS12, pass: lodestone123, alias: lodestone) committed to android/app/.
+- Signing configured in build.gradle.kts (release build type).
+- App logo: /sdcard/Download/logo.svg converted to mipmap icons at all densities.
+- Both CI and Android workflows green on commit 1fda8db (Android run 40269686897).

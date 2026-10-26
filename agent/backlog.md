@@ -27,3 +27,5 @@ DONE: Geyser wired to Android UI — AccessScreen.kt with crossplay toggle, Nati
 DONE: App logo — /sdcard/Download/logo.svg converted to mipmap PNGs at all densities (mdpi/hdpi/xhdpi/xxhdpi/xxxhdpi) + round variants; manifest icon/roundIcon attributes set
 
 REMAINING: Optional end-to-end device testing on real Termux device.
+
+DONE: Production APK built and signed — 12MB, available at /sdcard/Download/lodestone-release.apk (keystore: lodestone.keystore, pass: lodestone123, alias: lodestone).
