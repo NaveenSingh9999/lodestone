@@ -22,7 +22,6 @@ interface LodestoneLib : Library {
     fun lodestone_analyze_crash(engine: Pointer, id: String, out: PointerByReference): Int
     fun lodestone_provision_runtime(engine: Pointer, javaMajor: Int, out: PointerByReference): Int
     fun lodestone_register_event_callback(engine: Pointer, cb: EventCallback?): Int
-    fun lodestone_list_instances(engine: Pointer, out: PointerByReference): Int
     fun lodestone_start_sleep_proxy(engine: Pointer, configJson: String, bindPort: Int, serverHost: String, serverPort: Int): Int
     fun lodestone_stop_sleep_proxy(engine: Pointer): Int
     fun lodestone_start_remote_api(engine: Pointer, token: String, bindPort: Int, allowWan: Int): Int

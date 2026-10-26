@@ -6,13 +6,13 @@ import com.lodestone.app.server.LodestoneService
 import com.lodestone.app.state.StateStore
 
 class QsTileService : TileService() {
-    override fun onStart() {
-        super.onStart()
+    override fun onStartListening() {
+        super.onStartListening()
         val tile = qsTile
         tile.state = if (StateStore.anyRunning()) {
-            TileService.Tile.STATE_ACTIVE
+            android.service.quicksettings.Tile.STATE_ACTIVE
         } else {
-            TileService.Tile.STATE_INACTIVE
+            android.service.quicksettings.Tile.STATE_INACTIVE
         }
         tile.label = if (StateStore.anyRunning()) "Lodestone: Running" else "Lodestone: Stopped"
         tile.updateTile()

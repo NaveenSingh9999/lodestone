@@ -94,27 +94,29 @@ class LodestoneService : Service() {
     }
 
     private fun startAllInstances() {
-        val listJson = NativeBridge.listInstances(engine) ?: return
+        val e = engine ?: return
+        val listJson = NativeBridge.listInstances(e) ?: return
         try {
             val arr = JSONArray(listJson)
             for (i in 0 until arr.length()) {
                 val id = arr.getJSONObject(i).getString("id")
-                engine?.let { NativeBridge.start(it, id) }
+                NativeBridge.start(e, id)
             }
-        } catch (e: Exception) {
+        } catch (ex: Exception) {
             // ignore parse errors
         }
     }
 
     private fun stopAllInstances() {
-        val listJson = NativeBridge.listInstances(engine) ?: return
+        val e = engine ?: return
+        val listJson = NativeBridge.listInstances(e) ?: return
         try {
             val arr = JSONArray(listJson)
             for (i in 0 until arr.length()) {
                 val id = arr.getJSONObject(i).getString("id")
-                engine?.let { NativeBridge.stop(it, id) }
+                NativeBridge.stop(e, id)
             }
-        } catch (e: Exception) {
+        } catch (ex: Exception) {
             // ignore parse errors
         }
     }
