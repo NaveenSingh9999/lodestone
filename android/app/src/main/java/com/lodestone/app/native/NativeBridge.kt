@@ -61,6 +61,10 @@ object NativeBridge {
         return readOut(lib.lodestone_list_instances(engine, out), out)
     }
 
+    fun start(engine: Pointer, id: String): Int = lib.lodestone_start(engine, id)
+
+    fun stop(engine: Pointer, id: String): Int = lib.lodestone_stop(engine, id)
+
     fun registerEventCallback(engine: Pointer, cb: EventCallback): Int =
         lib.lodestone_register_event_callback(engine, cb)
 
