@@ -34,7 +34,14 @@ fun interface EventCallback {
 }
 
 object NativeBridge {
-    val lib: LodestoneLib = Native.load("lodestone_ffi", LodestoneLib::class.java)
+    val lib: LodestoneLib by lazy {
+        try {
+            Native.load("lodestone_ffi", LodestoneLib::class.java)
+        } catch (e: Throwable) {
+            android.util.Log.e("Lodestone", "Failed to load native library", e)
+            throw e
+        }
+    }
 
     fun engineNew(dataDir: String): Pointer = lib.lodestone_engine_new(dataDir)
     fun engineFree(engine: Pointer) = lib.lodestone_engine_free(engine)

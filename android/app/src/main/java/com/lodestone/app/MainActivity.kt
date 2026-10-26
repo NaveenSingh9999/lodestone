@@ -32,9 +32,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         try {
             engine = NativeBridge.engineNew(cacheDir.absolutePath)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             android.util.Log.e("Lodestone", "Engine creation failed", e)
-            initError = e.message ?: "Unknown error"
+            initError = "${e.javaClass.simpleName}: ${e.message}"
         }
         setContent {
             MaterialTheme {

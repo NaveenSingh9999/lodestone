@@ -20,7 +20,7 @@ class LodestoneService : Service() {
         init {
             try {
                 System.loadLibrary("lodestone_ffi")
-            } catch (e: UnsatisfiedLinkError) {
+            } catch (e: Throwable) {
                 android.util.Log.e("Lodestone", "Failed to load native library", e)
             }
         }
