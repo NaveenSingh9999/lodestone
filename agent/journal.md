@@ -112,3 +112,14 @@
 - Removed adaptive icon XML (potential circular reference).
 - Both CI and Android workflows green on commit 5ed9be9.
 - Production APK rebuilt: 13MB at /sdcard/Download/lodestone-release.apk.
+
+## 2026-10-26 — Silent crash fix (v2) + app icon update
+
+- Root cause: res/values/ directory was empty (no strings.xml/colors.xml), which can cause runtime crashes on some Android versions.
+- Added res/values/strings.xml (app_name) and colors.xml.
+- Added error handling (try-catch Throwable) to MainActivity and LodestoneService.
+- Changed notification small icon from R.mipmap.ic_launcher to R.drawable.ic_notification.
+- Simplified MainActivity to remove NativeBridge calls (potential crash source).
+- Updated app icon from /sdcard/Download/Apple-Symbols-Font/ PNG (2896x2896) converted to mipmap at all 5 densities.
+- Both CI and Android workflows green on commit b84a06a (Android run 40277047424).
+- Production APK rebuilt: 13MB at /sdcard/Download/lodestone-release.apk.
