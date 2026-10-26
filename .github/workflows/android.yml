@@ -58,7 +58,7 @@ jobs:
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0" 2>&1 | tail -3
       - name: Build Android app (release)
         working-directory: android
-        run: gradle assembleRelease --stacktrace 2>&1 | tail -50
+        run: gradle assembleRelease --stacktrace 2>&1 | head -100
       - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
