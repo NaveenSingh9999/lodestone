@@ -60,7 +60,9 @@ jobs:
         working-directory: android
         run: |
           set -o pipefail
-          gradle assembleRelease --stacktrace 2>&1 | tee build.log | tail -n 60
+          gradle assembleRelease --console=plain 2>&1 | tee build.log | tail -n 30
+          # Kotlin compile errors (e: lines) scroll far above the tail; force-show them
+          grep -E "^e: |^error: " build.log | head -60 || true
       - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
