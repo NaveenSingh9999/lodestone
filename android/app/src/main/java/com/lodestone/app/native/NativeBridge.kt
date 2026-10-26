@@ -60,7 +60,7 @@ interface LodestoneLib : Library {
     fun lodestone_apply_tuning(engine: Pointer, serverType: String, profile: String, workDir: String): Int
 }
 
-fun interface EventCallback {
+fun interface EventCallback : com.sun.jna.Callback {
     fun onEvent(eventJson: String)
 }
 
