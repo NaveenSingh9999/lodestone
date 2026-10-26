@@ -312,14 +312,14 @@ class AppModel(val appContext: Context) {
     }
 
     fun analyzeCrashNow(id: String): Pair<String?, String?> {
-        val (err, report) = callEngine { e ->
+        val (err, report): Pair<String?, String?> = callEngine { e ->
             NativeBridge.analyzeCrash(e, id)?.let { 0 to it } ?: (1 to null)
         }
         return report to err
     }
 
     fun versionsNow(serverType: String): Pair<List<String>?, String?> {
-        val (err, json) = callEngine { e ->
+        val (err, json): Pair<String?, String?> = callEngine { e ->
             NativeBridge.listVersions(e, serverType)?.let { 0 to it } ?: (1 to null)
         }
         if (err != null) return null to err
@@ -413,7 +413,7 @@ class AppModel(val appContext: Context) {
     // ----- files -----
 
     fun listFilesNow(rel: String): Pair<List<FileEntry>?, String?> {
-        val (err, json) = callEngine { e ->
+        val (err, json): Pair<String?, String?> = callEngine { e ->
             NativeBridge.listFiles(e, rel)?.let { 0 to it } ?: (1 to null)
         }
         if (err != null) return null to err
@@ -423,7 +423,7 @@ class AppModel(val appContext: Context) {
     }
 
     fun readFileNow(rel: String): Pair<String?, String?> {
-        val (err, text) = callEngine { e ->
+        val (err, text): Pair<String?, String?> = callEngine { e ->
             NativeBridge.readFile(e, rel)?.let { 0 to it } ?: (1 to null)
         }
         return text to err
@@ -437,7 +437,7 @@ class AppModel(val appContext: Context) {
     // ----- backups -----
 
     fun backupsNow(instanceId: String): Pair<List<BackupItem>?, String?> {
-        val (err, json) = callEngine { e ->
+        val (err, json): Pair<String?, String?> = callEngine { e ->
             NativeBridge.listBackups(e, instanceId)?.let { 0 to it } ?: (1 to null)
         }
         if (err != null) return null to err
@@ -469,7 +469,7 @@ class AppModel(val appContext: Context) {
     // ----- content (plugins / mods) -----
 
     fun searchContentNow(query: String): Pair<List<ContentHit>?, String?> {
-        val (err, json) = callEngine { e ->
+        val (err, json): Pair<String?, String?> = callEngine { e ->
             NativeBridge.searchContent(e, query, 12)?.let { 0 to it } ?: (1 to null)
         }
         if (err != null) return null to err
@@ -479,7 +479,7 @@ class AppModel(val appContext: Context) {
     }
 
     fun contentVersionsNow(projectId: String): Pair<List<ContentVersion>?, String?> {
-        val (err, json) = callEngine { e ->
+        val (err, json): Pair<String?, String?> = callEngine { e ->
             NativeBridge.listContentVersions(e, projectId)?.let { 0 to it } ?: (1 to null)
         }
         if (err != null) return null to err
@@ -499,7 +499,7 @@ class AppModel(val appContext: Context) {
     ): Pair<String?, String?> {
         val subdir = contentDirFor(instance.serverType)
         val rel = "instances/${instance.id}/$subdir"
-        val (err, json) = callEngine { e ->
+        val (err, json): Pair<String?, String?> = callEngine { e ->
             NativeBridge.installContent(e, projectId, versionId, rel)?.let { 0 to it } ?: (1 to null)
         }
         if (err != null) return null to err

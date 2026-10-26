@@ -61,7 +61,8 @@ fun FilesContent(model: AppModel) {
 
     LaunchedEffect(rel, reload) {
         model.withBusy {
-            val (list, msg) = withContext(Dispatchers.IO) { model.listFilesNow(rel) }
+            val (list, msg): Pair<List<FileEntry>?, String?> =
+                withContext(Dispatchers.IO) { model.listFilesNow(rel) }
             entries = list
             error = msg
             if (msg != null) model.toast = msg
@@ -135,8 +136,14 @@ fun FilesContent(model: AppModel) {
                         } else {
                             scope.launch {
                                 model.withBusy {
-                                    val (text, msg) = withContext(Dispatchers.IO) { model.readFileNow(child) }
-                                    if (msg != null) model.toast = msg else editing = child to (text ?: "")
+                                    val result: Pair<String?, String?> =
+                                        withContext(Dispatchers.IO) { model.readFileNow(child) }
+                                    val err: String? = result.second as? String
+                                    if (err != null) {
+                                        model.toast = err
+                                    } else {
+                                        editing = child to (result.first as? String ?: "")
+                                    }
                                 }
                             }
                         }

@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.lodestone.app.ui
 
 import androidx.compose.foundation.clickable
@@ -81,7 +83,7 @@ fun InstancesContent(model: AppModel) {
                     onCrash = {
                         scope.launch {
                             model.withBusy {
-                                val (_report, _err) = withContext(Dispatchers.IO) { model.analyzeCrashNow(inst.id) }
+                                val (_report, _err): Pair<String?, String?> = withContext(Dispatchers.IO) { model.analyzeCrashNow(inst.id) }
                                 crashReport = _report
                                 if (_err != null) model.toast = _err
                             }
@@ -370,7 +372,7 @@ private fun CreateInstanceDialog(model: AppModel) {
                         loadingVersions = true
                         versionsErr = null
                         scope.launch {
-                            val (list, err) = withContext(Dispatchers.IO) { model.versionsNow(type) }
+                            val (list, err): Pair<List<String>?, String?> = withContext(Dispatchers.IO) { model.versionsNow(type) }
                             versions = list
                             versionsErr = err
                             loadingVersions = false

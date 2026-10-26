@@ -211,7 +211,7 @@ private fun ServerSettings(model: AppModel) {
         rows = null
         loadError = null
         if (instanceId.isNotBlank()) {
-            val (content, err) = withContext(Dispatchers.IO) {
+            val (content, err): Pair<String?, String?> = withContext(Dispatchers.IO) {
                 model.readFileNow("instances/$instanceId/server.properties")
             }
             if (err != null) {
@@ -238,7 +238,7 @@ private fun ServerSettings(model: AppModel) {
                     } else {
                         model.toast = "Saved server.properties"
                     }
-                    val (content, err2) = withContext(Dispatchers.IO) {
+                    val (content, err2): Pair<String?, String?> = withContext(Dispatchers.IO) {
                         model.readFileNow("instances/$instanceId/server.properties")
                     }
                     if (err2 == null) rows = content?.let { parseProps(it) } ?: rows
@@ -619,7 +619,7 @@ private fun PluginsSettings(model: AppModel) {
                         val q = query.trim()
                         scope.launch {
                             model.withBusy {
-                                val (list, err) = withContext(Dispatchers.IO) { model.searchContentNow(q) }
+                                val (list, err): Pair<List<ContentHit>?, String?> = withContext(Dispatchers.IO) { model.searchContentNow(q) }
                                 hits = list ?: emptyList()
                                 searched = true
                                 if (err != null) model.toast = err
@@ -645,7 +645,7 @@ private fun PluginsSettings(model: AppModel) {
                 versions = emptyList()
                 val pid = hit.projectId
                 scope.launch {
-                    val (vlist, err) = withContext(Dispatchers.IO) { model.contentVersionsNow(pid) }
+                    val (vlist, err): Pair<List<com.lodestone.app.ContentVersion>?, String?> = withContext(Dispatchers.IO) { model.contentVersionsNow(pid) }
                     versions = vlist ?: emptyList()
                     if (err != null) model.toast = err
                 }
@@ -666,7 +666,7 @@ private fun PluginsSettings(model: AppModel) {
                     }
                     scope.launch {
                         model.withBusy {
-                            val (path, err) = withContext(Dispatchers.IO) { model.installContentNow(target, proj.projectId, v.id) }
+                            val (path, err): Pair<String?, String?> = withContext(Dispatchers.IO) { model.installContentNow(target, proj.projectId, v.id) }
                             model.toast = err ?: "Installed ${path ?: v.number}"
                         }
                     }
@@ -742,7 +742,7 @@ private fun BackupsSettings(model: AppModel) {
 
     LaunchedEffect(instanceId) {
         if (instanceId.isNotBlank()) {
-            val (backups, err) = withContext(Dispatchers.IO) { model.backupsNow(instanceId) }
+            val (backups, err): Pair<List<BackupItem>?, String?> = withContext(Dispatchers.IO) { model.backupsNow(instanceId) }
             list = backups ?: emptyList()
             loaded = true
             if (err != null) model.toast = err
@@ -752,7 +752,7 @@ private fun BackupsSettings(model: AppModel) {
     fun reload() {
         val id = instanceId
         scope.launch {
-            val (backups, err) = withContext(Dispatchers.IO) { model.backupsNow(id) }
+            val (backups, err): Pair<List<BackupItem>?, String?> = withContext(Dispatchers.IO) { model.backupsNow(id) }
             list = backups ?: emptyList()
             if (err != null) model.toast = err
         }
