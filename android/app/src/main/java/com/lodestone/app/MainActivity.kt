@@ -26,6 +26,7 @@ import com.sun.jna.Pointer
 
 class MainActivity : ComponentActivity() {
     private var engine: Pointer? = null
+    private var initError: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,6 +34,7 @@ class MainActivity : ComponentActivity() {
             engine = NativeBridge.engineNew(cacheDir.absolutePath)
         } catch (e: Exception) {
             android.util.Log.e("Lodestone", "Engine creation failed", e)
+            initError = e.message ?: "Unknown error"
         }
         setContent {
             MaterialTheme {
@@ -41,7 +43,8 @@ class MainActivity : ComponentActivity() {
                         onStart = {
                             startForegroundService(Intent(this, LodestoneService::class.java))
                         },
-                        engine = engine
+                        engine = engine,
+                        initError = initError
                     )
                 }
             }
@@ -56,7 +59,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainScreen(onStart: () -> Unit, engine: Pointer?) {
+fun MainScreen(onStart: () -> Unit, engine: Pointer?, initError: String?) {
     var showAccess by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -64,6 +67,9 @@ fun MainScreen(onStart: () -> Unit, engine: Pointer?) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("Lodestone", style = MaterialTheme.typography.headlineMedium)
+        if (initError != null) {
+            Text("Init error: $initError", modifier = Modifier.padding(top = 8.dp))
+        }
         if (showAccess) {
             AccessScreen(engine = engine)
         } else {
