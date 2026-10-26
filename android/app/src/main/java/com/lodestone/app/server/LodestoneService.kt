@@ -183,7 +183,7 @@ class LodestoneService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Lodestone")
             .setContentText(summary + (if (proxyActive) " • sleep proxy on" else ""))
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setOngoing(true)
             .addAction(android.R.drawable.ic_media_play, "Start All", startPending)
             .addAction(android.R.drawable.ic_media_pause, "Stop All", stopPending)
