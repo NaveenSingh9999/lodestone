@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import com.lodestone.app.R
 import com.lodestone.app.native.NativeBridge
 import com.lodestone.app.state.AppState
 import com.lodestone.app.state.EngineHolder
@@ -28,6 +29,8 @@ class LodestoneService : Service() {
         const val NOTIF_ID = 1
         const val ACTION_START_ALL = "com.lodestone.app.ACTION_START_ALL"
         const val ACTION_STOP_ALL = "com.lodestone.app.ACTION_STOP_ALL"
+        const val ACTION_START_SLEEP_PROXY = "com.lodestone.app.ACTION_START_SLEEP_PROXY"
+        const val ACTION_STOP_SLEEP_PROXY = "com.lodestone.app.ACTION_STOP_SLEEP_PROXY"
         const val SLEEP_PROXY_BIND_PORT = 25565
         const val SLEEP_PROXY_SERVER_PORT = 25565
         const val REMOTE_API_PORT = 7300
