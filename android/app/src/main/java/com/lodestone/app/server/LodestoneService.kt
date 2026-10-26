@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import com.lodestone.app.R
 import com.lodestone.app.native.NativeBridge
 import com.lodestone.app.state.StateStore
 import org.json.JSONArray
