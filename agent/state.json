@@ -1,12 +1,11 @@
 {
   "goal": "Complete Lodestone (Android-first Minecraft Java server manager per lodestone.md) — all spec scope (M0–M5 + extras) implemented and CI-green.",
-  "state": "ALL SPEC SCOPE COMPLETE + PRODUCTION APK BUILT AND SIGNED. M0–M5, all catalog providers, sleep proxy, remote API, FFI wiring, Android spec 5 surfaces, RCON metrics, JLI_Launch dlopen, Geyser crossplay (with UI toggle), app logo, production signing config, error handling for silent crashes. 118 lib tests green. CI + Android workflows green. Release APK (13MB, signed) at /sdcard/Download/lodestone-release.apk.",
+  "state": "ALL SPEC SCOPE COMPLETE + PRODUCTION APK BUILT AND SIGNED. M0–M5, all catalog providers, sleep proxy, remote API, FFI wiring, Android spec 5 surfaces, RCON metrics, JLI_Launch dlopen, Geyser crossplay (with UI toggle), app logo, production signing config, crash fixes (empty res/values, error handling, notification icon). 118 lib tests green. CI + Android workflows green.",
   "last_actions": [
-    "Added error handling to MainActivity (try-catch around engine creation, error display in UI) and LodestoneService (try-catch around System.loadLibrary)",
-    "Added ic_notification drawable (white-on-transparent vector) for notification small icon",
-    "Removed adaptive icon XML (potential circular reference)",
-    "Both CI (40272305803) and Android (40272305800) workflows green on commit 5ed9be9",
-    "Production APK rebuilt: 13MB, available at /sdcard/Download/lodestone-release.apk"
+    "Fixed silent crash: added res/values/strings.xml and colors.xml (values dir was empty), added error handling to MainActivity and LodestoneService, notification icon uses ic_notification drawable",
+    "Updated app icon from /sdcard/Download/Apple-Symbols-Font/ PNG (2896x2896) converted to mipmap at all densities",
+    "Both CI (40274984133) and Android (40274984126) workflows green on commit ae2c56e",
+    "Production APK rebuilt: 13MB at /sdcard/Download/lodestone-release.apk"
   ],
   "extras": [
     "config (ServerProperties + TuningProfile, paper YAML, apply_to_instance)",
@@ -23,12 +22,12 @@
     "RCON metrics (4.3 depth): Source RCON client + MetricsCollector + InstanceRunner callback",
     "JLI_Launch dlopen (spec §5 depth): AndroidPlatform hosts JVM via dlopen(libjli.so)+JLI_Launch with piped stdio, wired into FFI via cfg, 3 tests",
     "Geyser/Bedrock crossplay (4.11 optional): crossplay.rs + AccessScreen toggle + NativeBridge binding, 7 tests",
-    "App logo: /sdcard/Download/logo.svg converted to mipmap icons at all densities",
+    "App logo: /sdcard/Download/Apple-Symbols-Font/ PNG converted to mipmap icons at all densities",
     "Production APK: 13MB signed release build with keystore (pass: lodestone123, alias: lodestone)",
-    "Error handling: try-catch in MainActivity and LodestoneService, error display in UI, notification icon (ic_notification drawable)"
+    "Crash fix: added res/values/strings.xml + colors.xml, error handling in MainActivity/LodestoneService, notification icon (ic_notification drawable)"
   ],
   "next": [
-    "Optional: end-to-end device testing on real Termux device (install instance, start server, verify sleep proxy wake + remote API + RCON metrics + JLI_Launch JVM hosting + Geyser crossplay)"
+    "Optional: end-to-end device testing on real Termux device"
   ],
   "blocked": [],
   "milestone": "all",
