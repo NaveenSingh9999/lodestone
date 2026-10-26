@@ -61,8 +61,9 @@ fun FilesContent(model: AppModel) {
 
     LaunchedEffect(rel, reload) {
         model.withBusy {
-            val (list, msg): Pair<List<FileEntry>?, String?> =
+            val result: Pair<List<FileEntry>?, String?> =
                 withContext(Dispatchers.IO) { model.listFilesNow(rel) }
+            val (list, msg) = result
             entries = list
             error = msg
             if (msg != null) model.toast = msg

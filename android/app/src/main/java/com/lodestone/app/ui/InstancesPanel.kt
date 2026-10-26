@@ -83,7 +83,8 @@ fun InstancesContent(model: AppModel) {
                     onCrash = {
                         scope.launch {
                             model.withBusy {
-                                val (_report, _err): Pair<String?, String?> = withContext(Dispatchers.IO) { model.analyzeCrashNow(inst.id) }
+                                val result: Pair<String?, String?> = withContext(Dispatchers.IO) { model.analyzeCrashNow(inst.id) }
+                                val (_report, _err) = result
                                 crashReport = _report
                                 if (_err != null) model.toast = _err
                             }
@@ -372,7 +373,8 @@ private fun CreateInstanceDialog(model: AppModel) {
                         loadingVersions = true
                         versionsErr = null
                         scope.launch {
-                            val (list, err): Pair<List<String>?, String?> = withContext(Dispatchers.IO) { model.versionsNow(type) }
+                            val result: Pair<List<String>?, String?> = withContext(Dispatchers.IO) { model.versionsNow(type) }
+                            val (list, err) = result
                             versions = list
                             versionsErr = err
                             loadingVersions = false

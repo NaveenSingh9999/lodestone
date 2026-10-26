@@ -312,16 +312,18 @@ class AppModel(val appContext: Context) {
     }
 
     fun analyzeCrashNow(id: String): Pair<String?, String?> {
-        val (err, report): Pair<String?, String?> = callEngine { e ->
+        val result: Pair<String?, String?> = callEngine { e ->
             NativeBridge.analyzeCrash(e, id)?.let { 0 to it } ?: (1 to null)
         }
+        val (err, report) = result
         return report to err
     }
 
     fun versionsNow(serverType: String): Pair<List<String>?, String?> {
-        val (err, json): Pair<String?, String?> = callEngine { e ->
+        val result: Pair<String?, String?> = callEngine { e ->
             NativeBridge.listVersions(e, serverType)?.let { 0 to it } ?: (1 to null)
         }
+        val (err, json) = result
         if (err != null) return null to err
         val list = runCatching {
             val arr = JSONArray(json!!)
@@ -413,9 +415,10 @@ class AppModel(val appContext: Context) {
     // ----- files -----
 
     fun listFilesNow(rel: String): Pair<List<FileEntry>?, String?> {
-        val (err, json): Pair<String?, String?> = callEngine { e ->
+        val result: Pair<String?, String?> = callEngine { e ->
             NativeBridge.listFiles(e, rel)?.let { 0 to it } ?: (1 to null)
         }
+        val (err, json) = result
         if (err != null) return null to err
         val list = json?.let { parseFileEntries(it) }
         if (list == null) return null to "bad response"
@@ -423,9 +426,10 @@ class AppModel(val appContext: Context) {
     }
 
     fun readFileNow(rel: String): Pair<String?, String?> {
-        val (err, text): Pair<String?, String?> = callEngine { e ->
+        val result: Pair<String?, String?> = callEngine { e ->
             NativeBridge.readFile(e, rel)?.let { 0 to it } ?: (1 to null)
         }
+        val (err, text) = result
         return text to err
     }
 
@@ -437,9 +441,10 @@ class AppModel(val appContext: Context) {
     // ----- backups -----
 
     fun backupsNow(instanceId: String): Pair<List<BackupItem>?, String?> {
-        val (err, json): Pair<String?, String?> = callEngine { e ->
+        val result: Pair<String?, String?> = callEngine { e ->
             NativeBridge.listBackups(e, instanceId)?.let { 0 to it } ?: (1 to null)
         }
+        val (err, json) = result
         if (err != null) return null to err
         val list = json?.let { parseBackups(it) }
         if (list == null) return null to "bad response"
@@ -469,9 +474,10 @@ class AppModel(val appContext: Context) {
     // ----- content (plugins / mods) -----
 
     fun searchContentNow(query: String): Pair<List<ContentHit>?, String?> {
-        val (err, json): Pair<String?, String?> = callEngine { e ->
+        val result: Pair<String?, String?> = callEngine { e ->
             NativeBridge.searchContent(e, query, 12)?.let { 0 to it } ?: (1 to null)
         }
+        val (err, json) = result
         if (err != null) return null to err
         val list = json?.let { parseContentHits(it) }
         if (list == null) return null to "bad response"
@@ -479,9 +485,10 @@ class AppModel(val appContext: Context) {
     }
 
     fun contentVersionsNow(projectId: String): Pair<List<ContentVersion>?, String?> {
-        val (err, json): Pair<String?, String?> = callEngine { e ->
+        val result: Pair<String?, String?> = callEngine { e ->
             NativeBridge.listContentVersions(e, projectId)?.let { 0 to it } ?: (1 to null)
         }
+        val (err, json) = result
         if (err != null) return null to err
         val list = json?.let { parseContentVersions(it) }
         if (list == null) return null to "bad response"
@@ -499,9 +506,10 @@ class AppModel(val appContext: Context) {
     ): Pair<String?, String?> {
         val subdir = contentDirFor(instance.serverType)
         val rel = "instances/${instance.id}/$subdir"
-        val (err, json): Pair<String?, String?> = callEngine { e ->
+        val result: Pair<String?, String?> = callEngine { e ->
             NativeBridge.installContent(e, projectId, versionId, rel)?.let { 0 to it } ?: (1 to null)
         }
+        val (err, json) = result
         if (err != null) return null to err
         val path = runCatching { JSONObject(json!!).optString("path") }.getOrNull()
         return path to null
