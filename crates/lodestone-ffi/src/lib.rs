@@ -1774,9 +1774,9 @@ pub unsafe extern "C" fn lodestone_list_files(
     let result: Result<Vec<PathEntryDto>, String> = (|| {
         let rel = validate_rel(&rel)?;
         let dir = resolve_under(&engine.data_dir, rel)?;
-        let mut entries = std::fs::read_dir(&dir).map_err(|e| format!("read_dir: {e}"))?;
+        let entries = std::fs::read_dir(&dir).map_err(|e| format!("read_dir: {e}"))?;
         let mut out: Vec<PathEntryDto> = Vec::new();
-        while let Some(entry) = entries.next() {
+        for entry in entries {
             let entry = entry.map_err(|e| format!("entry: {e}"))?;
             let path = entry.path();
             let name = path
