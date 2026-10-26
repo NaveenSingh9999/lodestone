@@ -28,4 +28,6 @@ DONE: App logo — /sdcard/Download/logo.svg converted to mipmap PNGs at all den
 
 REMAINING: Optional end-to-end device testing on real Termux device.
 
+DONE: Error handling for silent crashes — try-catch in MainActivity and LodestoneService, error display in UI, notification icon (ic_notification drawable). Production APK rebuilt: 13MB at /sdcard/Download/lodestone-release.apk.
+
 DONE: Production APK built and signed — 12MB, available at /sdcard/Download/lodestone-release.apk (keystore: lodestone.keystore, pass: lodestone123, alias: lodestone).

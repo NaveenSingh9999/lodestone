@@ -104,3 +104,11 @@
 - Signing configured in build.gradle.kts (release build type).
 - App logo: /sdcard/Download/logo.svg converted to mipmap icons at all densities.
 - Both CI and Android workflows green on commit 1fda8db (Android run 40269686897).
+
+## 2026-10-26 — Silent crash fix + notification icon
+
+- Added error handling to MainActivity (try-catch around engine creation, error display in UI) and LodestoneService (try-catch around System.loadLibrary).
+- Added ic_notification drawable (white-on-transparent vector) for notification small icon.
+- Removed adaptive icon XML (potential circular reference).
+- Both CI and Android workflows green on commit 5ed9be9.
+- Production APK rebuilt: 13MB at /sdcard/Download/lodestone-release.apk.
