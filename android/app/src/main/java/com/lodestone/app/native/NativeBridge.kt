@@ -68,6 +68,18 @@ object NativeBridge {
         return readOut(lib.lodestone_list_instances(engine, out), out)
     }
 
+    fun createInstance(engine: Pointer, specJson: String): Int {
+        val out = PointerByReference()
+        val rc = lib.lodestone_create_instance(engine, specJson, out)
+        if (rc == 0) {
+            val p = out.value
+            lib.lodestone_string_free(p)
+        }
+        return rc
+    }
+
+    fun deleteInstance(engine: Pointer, id: String): Int = lib.lodestone_delete_instance(engine, id)
+
     fun start(engine: Pointer, id: String): Int = lib.lodestone_start(engine, id)
 
     fun stop(engine: Pointer, id: String): Int = lib.lodestone_stop(engine, id)
