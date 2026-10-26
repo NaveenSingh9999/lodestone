@@ -39,6 +39,7 @@ import com.lodestone.app.FileEntry
 import com.lodestone.app.fmtBytes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 internal fun parentPath(rel: String): String {
     if (rel.isEmpty()) return ""
