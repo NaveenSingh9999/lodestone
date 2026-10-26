@@ -65,12 +65,20 @@ struct VersionDto {
     java_major: Option<u32>,
 }
 
+#[derive(Serialize, Clone)]
+pub(crate) struct PathEntryDto {
+    name: String,
+    dir: bool,
+    size: u64,
+}
+
 #[derive(Serialize)]
 struct InstanceSummary {
     id: String,
     server_type: String,
     version: String,
     state: String,
+    work_dir: String,
 }
 
 struct InstanceRecord {
@@ -586,6 +594,7 @@ pub unsafe extern "C" fn lodestone_list_instances(
             server_type: r.server_type.clone(),
             version: r.version.clone(),
             state: r.state.clone(),
+            work_dir: r.work_dir.display().to_string(),
         })
         .collect();
     match ok_json(&list) {
@@ -1040,6 +1049,7 @@ pub unsafe extern "C" fn lodestone_list_backups(
                 name: String,
                 size: u64,
                 sha256: String,
+                path: String,
             }
             let dto: Vec<Dto> = list
                 .into_iter()
@@ -1047,6 +1057,7 @@ pub unsafe extern "C" fn lodestone_list_backups(
                     name: b.name,
                     size: b.size,
                     sha256: b.sha256,
+                    path: b.path.display().to_string(),
                 })
                 .collect();
             match ok_json(&dto) {
@@ -1696,6 +1707,271 @@ pub unsafe extern "C" fn lodestone_stop_remote_api(engine: *mut Engine) -> c_int
     }
 }
 
+// ---------- device-local file access (file manager / server settings editor) ----------
+// Root for all relative paths is the engine data dir. Absolute escapes ("..",
+// absolute components, symlinks pointing outside the root) are rejected.
+
+fn validate_rel(rel: &str) -> Result<PathBuf, String> {
+    let rel = rel.trim_start_matches('/').trim_end_matches('/');
+    if rel.is_empty() {
+        return Ok(PathBuf::new());
+    }
+    for comp in std::path::Path::new(rel).components() {
+        if !matches!(comp, std::path::Component::Normal(_)) {
+            return Err(format!("illegal path: {rel}"));
+        }
+    }
+    Ok(PathBuf::from(rel))
+}
+
+fn resolve_under(root: &std::path::Path, rel: PathBuf) -> Result<PathBuf, String> {
+    if rel.as_os_str().is_empty() {
+        return root.canonicalize().map_err(|e| format!("root: {e}"));
+    }
+    let full = root.join(&rel);
+    let canon = std::fs::canonicalize(&full).map_err(|e| format!("{}: {e}", rel.display()))?;
+    let rooted = root.canonicalize().map_err(|e| format!("root: {e}"))?;
+    if canon.starts_with(rooted) {
+        Ok(canon)
+    } else {
+        Err(format!("path escapes root: {}", rel.display()))
+    }
+}
+
+fn target_under(root: &std::path::Path, rel: PathBuf) -> Result<PathBuf, String> {
+    if rel.as_os_str().is_empty() {
+        return Err("empty rel path".into());
+    }
+    let full = root.join(&rel);
+    if let Some(parent) = full.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| format!("mkdir: {e}"))?;
+        let canon = parent.canonicalize().map_err(|e| format!("parent: {e}"))?;
+        let rooted = root.canonicalize().map_err(|e| format!("root: {e}"))?;
+        if !canon.starts_with(rooted) {
+            return Err(format!("path escapes root: {}", rel.display()));
+        }
+    }
+    Ok(full)
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lodestone_list_files(
+    engine: *mut Engine,
+    rel: *const c_char,
+    out: *mut *mut c_char,
+) -> c_int {
+    let Some(engine) = engine_ref(engine) else {
+        return 1;
+    };
+    let Some(rel) = take_cstr(rel) else {
+        set_error("rel is null");
+        return 1;
+    };
+    if out.is_null() {
+        set_error("out is null");
+        return 1;
+    }
+    let result: Result<Vec<PathEntryDto>, String> = (|| {
+        let rel = validate_rel(&rel)?;
+        let dir = resolve_under(&engine.data_dir, rel)?;
+        let mut entries = std::fs::read_dir(&dir).map_err(|e| format!("read_dir: {e}"))?;
+        let mut out: Vec<PathEntryDto> = Vec::new();
+        while let Some(entry) = entries.next() {
+            let entry = entry.map_err(|e| format!("entry: {e}"))?;
+            let path = entry.path();
+            let name = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or_default()
+                .to_string();
+            let meta = std::fs::metadata(&path).map_err(|e| format!("metadata: {e}"))?;
+            out.push(PathEntryDto {
+                name,
+                dir: meta.is_dir(),
+                size: if meta.is_dir() { 0 } else { meta.len() },
+            });
+        }
+        out.sort_by(|a, b| (b.dir, &a.name).cmp(&(a.dir, &b.name)));
+        Ok(out)
+    })();
+    match result {
+        Ok(list) => match ok_json(&list) {
+            Ok(c) => {
+                write_out(out, c);
+                0
+            }
+            Err(e) => {
+                set_error(e);
+                1
+            }
+        },
+        Err(e) => {
+            set_error(e);
+            1
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lodestone_read_file(
+    engine: *mut Engine,
+    rel: *const c_char,
+    out: *mut *mut c_char,
+) -> c_int {
+    const MAX_READ: usize = 512 * 1024;
+    let Some(engine) = engine_ref(engine) else {
+        return 1;
+    };
+    let Some(rel) = take_cstr(rel) else {
+        set_error("rel is null");
+        return 1;
+    };
+    if out.is_null() {
+        set_error("out is null");
+        return 1;
+    }
+    let result: Result<String, String> = (|| {
+        let rel = validate_rel(&rel)?;
+        let path = resolve_under(&engine.data_dir, rel)?;
+        let meta = std::fs::metadata(&path).map_err(|e| format!("metadata: {e}"))?;
+        if meta.len() > MAX_READ as u64 {
+            return Err(format!("file too large: {} bytes", meta.len()));
+        }
+        let bytes = std::fs::read(&path).map_err(|e| format!("read: {e}"))?;
+        if bytes.contains(&0) {
+            return Err("binary file: not editable in app".into());
+        }
+        String::from_utf8(bytes).map_err(|e| format!("utf8: {e}"))
+    })();
+    match result {
+        Ok(text) => match CString::new(text) {
+            Ok(c) => {
+                write_out(out, c);
+                0
+            }
+            Err(e) => {
+                set_error(format!("content: {e}"));
+                1
+            }
+        },
+        Err(e) => {
+            set_error(e);
+            1
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lodestone_write_file(
+    engine: *mut Engine,
+    rel: *const c_char,
+    content: *const c_char,
+) -> c_int {
+    let Some(engine) = engine_ref(engine) else {
+        return 1;
+    };
+    let Some(rel) = take_cstr(rel) else {
+        set_error("rel is null");
+        return 1;
+    };
+    let Some(content) = take_cstr(content) else {
+        set_error("content is null");
+        return 1;
+    };
+    let result: Result<(), String> = (|| {
+        let rel = validate_rel(&rel)?;
+        let path = target_under(&engine.data_dir, rel)?;
+        std::fs::write(&path, content).map_err(|e| format!("write: {e}"))
+    })();
+    match result {
+        Ok(()) => 0,
+        Err(e) => {
+            set_error(e);
+            1
+        }
+    }
+}
+
+// ---------- content install (plugins / mods via Modrinth) ----------
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lodestone_install_content(
+    engine: *mut Engine,
+    project_id: *const c_char,
+    version_id: *const c_char,
+    dest_dir: *const c_char,
+    out_path: *mut *mut c_char,
+) -> c_int {
+    let Some(engine) = engine_ref(engine) else {
+        return 1;
+    };
+    let Some(project_id) = take_cstr(project_id) else {
+        set_error("project_id is null");
+        return 1;
+    };
+    let Some(version_id) = take_cstr(version_id) else {
+        set_error("version_id is null");
+        return 1;
+    };
+    let Some(dest_dir) = take_cstr(dest_dir) else {
+        set_error("dest_dir is null");
+        return 1;
+    };
+    if out_path.is_null() {
+        set_error("out_path is null");
+        return 1;
+    }
+    let result: Result<PathBuf, String> = (|| {
+        let rel = validate_rel(&dest_dir)?;
+        let dest = target_under(&engine.data_dir, rel)?;
+        let client = engine.client.clone();
+        let mc = ModrinthClient::new(client);
+        let versions = engine
+            .rt
+            .block_on(mc.versions(&project_id))
+            .map_err(|e| format!("versions: {e}"))?;
+        let version = versions
+            .iter()
+            .find(|v| v.id == version_id)
+            .ok_or_else(|| format!("version {version_id} not found for {project_id}"))?;
+        let file = version
+            .files
+            .iter()
+            .find(|f| f.primary)
+            .or_else(|| version.files.first())
+            .ok_or_else(|| format!("version {version_id} has no files"))?;
+        engine
+            .rt
+            .block_on(mc.install_file(file, &dest))
+            .map_err(|e| format!("install: {e}"))
+    })();
+    match result {
+        Ok(path) => {
+            #[derive(Serialize)]
+            struct Dto {
+                path: String,
+            }
+            let dto = Dto {
+                path: path.display().to_string(),
+            };
+            match ok_json(&dto) {
+                Ok(c) => {
+                    write_out(out_path, c);
+                    0
+                }
+                Err(e) => {
+                    set_error(e);
+                    1
+                }
+            }
+        }
+        Err(e) => {
+            set_error(e);
+            1
+        }
+    }
+}
+
 // ---------- geyser / bedrock crossplay (spec 4.11 optional switch) ----------
 
 #[unsafe(no_mangle)]
@@ -1783,5 +2059,94 @@ pub unsafe extern "C" fn lodestone_enable_crossplay(
             set_error(format!("crossplay: {e}"));
             1
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::ffi::CString;
+
+    fn temp_root(name: &str) -> PathBuf {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!(
+            "lodestone-ffi-{}-{}-{}",
+            std::process::id(),
+            name,
+            nanos
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    unsafe fn take_out(out: *mut *mut c_char) -> String {
+        let raw = unsafe { out.read() };
+        let s = unsafe { CStr::from_ptr(raw).to_string_lossy().into_owned() };
+        unsafe { lodestone_string_free(raw) };
+        s
+    }
+
+    #[test]
+    fn rel_paths_reject_traversal() {
+        assert!(validate_rel("../etc").is_err());
+        assert!(validate_rel("a/../b").is_err());
+        assert!(validate_rel(".").is_err());
+        assert!(validate_rel("").is_ok());
+        assert!(validate_rel("/instances/a/server.properties").is_ok());
+    }
+
+    #[test]
+    fn list_write_read_roundtrip() {
+        let root = temp_root("roundtrip");
+        let root_c = CString::new(root.to_str().unwrap()).unwrap();
+        let engine = unsafe { lodestone_engine_new(root_c.as_ptr()) };
+        assert!(!engine.is_null());
+
+        let rel = CString::new("instances/test/server.properties").unwrap();
+        let text = CString::new("motd=hello\nmax-players=4").unwrap();
+        assert_eq!(
+            unsafe { lodestone_write_file(engine, rel.as_ptr(), text.as_ptr()) },
+            0
+        );
+
+        let mut slot: *mut c_char = std::ptr::null_mut();
+        let out: *mut *mut c_char = &mut slot;
+        let rrc = unsafe { lodestone_read_file(engine, rel.as_ptr(), out) };
+        if rrc != 0 {
+            let le = unsafe {
+                CStr::from_ptr(lodestone_last_error())
+                    .to_string_lossy()
+                    .into_owned()
+            };
+            panic!("read failed: {le}");
+        }
+        assert_eq!(rrc, 0);
+        let content = unsafe { take_out(out) };
+        assert_eq!(content, "motd=hello\nmax-players=4");
+
+        // list the parent dir
+        let dir = CString::new("instances").unwrap();
+        let mut slot2: *mut c_char = std::ptr::null_mut();
+        let out2: *mut *mut c_char = &mut slot2;
+        assert_eq!(
+            unsafe { lodestone_list_files(engine, dir.as_ptr(), out2) },
+            0
+        );
+        let listed = unsafe { take_out(out2) };
+        assert!(listed.contains("\"name\":\"test\"") && listed.contains("\"dir\":true"));
+
+        // traversal is refused
+        let evil = CString::new("../escape.txt").unwrap();
+        let evil_text = CString::new("nope").unwrap();
+        assert_ne!(
+            unsafe { lodestone_write_file(engine, evil.as_ptr(), evil_text.as_ptr()) },
+            0
+        );
+
+        unsafe { lodestone_engine_free(engine) };
+        let _ = std::fs::remove_dir_all(&root);
     }
 }

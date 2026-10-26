@@ -2,25 +2,24 @@ package com.lodestone.app.state
 
 import android.content.Context
 import android.content.SharedPreferences
-import org.json.JSONArray
-import org.json.JSONObject
 
 /**
  * Shared application state accessible from both the service and the activity.
- * Uses SharedPreferences for persistence and in-memory buffers for live data.
+ * Uses SharedPreferences for persistence and a thread-safe in-memory console
+ * buffer for live output. All writes arrive on background threads (service
+ * callbacks / JNA threads); all reads happen on the UI thread.
  */
 object AppState {
+    private const val MAX_CONSOLE_LINES = 600
+
     private var prefs: SharedPreferences? = null
 
-    // Live console output buffer (in-memory, bounded).
-    private val consoleBuffer = StringBuilder()
-    private val maxConsoleLines = 500
-    private var consoleLineCount = 0
-
-    // Live instance state map.
+    private val lock = Any()
+    private val consoleLines = mutableListOf<String>()
     private val instanceStates = mutableMapOf<String, String>()
 
-    // Event listeners (set by the activity).
+    // Event listeners (set by the activity). Called on the emitter thread;
+    // handling must be quick and non-blocking.
     private val listeners = mutableSetOf<(String, String) -> Unit>()
 
     fun init(context: Context) {
@@ -34,46 +33,56 @@ object AppState {
     }
 
     fun addListener(listener: (String, String) -> Unit) {
-        listeners.add(listener)
+        synchronized(lock) { listeners.add(listener) }
     }
 
     fun removeListener(listener: (String, String) -> Unit) {
-        listeners.remove(listener)
+        synchronized(lock) { listeners.remove(listener) }
     }
 
     fun updateInstanceState(instanceId: String, state: String) {
-        instanceStates[instanceId] = state
+        if (instanceId.isEmpty()) return
+        synchronized(lock) { instanceStates[instanceId] = state }
         prefs?.edit()?.putString("inst_$instanceId", state)?.apply()
-        listeners.forEach { it("StateChanged", "$instanceId=$state") }
+        val copy = synchronized(lock) { listeners.toList() }
+        copy.forEach { it("StateChanged", instanceId) }
     }
 
     fun appendConsole(line: String) {
-        consoleBuffer.appendLine(line)
-        consoleLineCount++
-        if (consoleLineCount > maxConsoleLines) {
-            // Trim oldest lines.
-            val lines = consoleBuffer.toString().lines()
-            consoleBuffer.clear()
-            lines.drop(lines.size / 4).forEach { consoleBuffer.appendLine(it) }
-            consoleLineCount = consoleBuffer.lines().count()
+        if (line.isEmpty()) return
+        synchronized(lock) {
+            consoleLines.add(line)
+            if (consoleLines.size > MAX_CONSOLE_LINES) {
+                repeat(consoleLines.size - MAX_CONSOLE_LINES) { consoleLines.removeAt(0) }
+            }
         }
-        listeners.forEach { it("ConsoleLine", line) }
+        val copy = synchronized(lock) { listeners.toList() }
+        copy.forEach { it("ConsoleLine", line) }
     }
 
-    fun getConsoleOutput(): String = consoleBuffer.toString()
+    fun consoleLines(): List<String> = synchronized(lock) { consoleLines.toList() }
+
+    fun getConsoleOutput(): String = synchronized(lock) { consoleLines.joinToString("\n") }
 
     fun clearConsole() {
-        consoleBuffer.clear()
-        consoleLineCount = 0
+        synchronized(lock) { consoleLines.clear() }
     }
 
-    fun snapshot(): Map<String, String> = instanceStates.toMap()
+    fun snapshot(): Map<String, String> = synchronized(lock) { instanceStates.toMap() }
 
-    fun anyRunning(): Boolean = instanceStates.values.any { it == "Running" }
+    fun anyRunning(): Boolean = synchronized(lock) {
+        instanceStates.values.any { it == "Running" || it == "Starting" }
+    }
 
     fun updateRemoteToken(token: String) {
         prefs?.edit()?.putString("remote_api_token", token)?.apply()
     }
 
     fun getRemoteToken(): String? = prefs?.getString("remote_api_token", null)
+
+    fun updateRemoteAllowWan(allow: Boolean) {
+        prefs?.edit()?.putBoolean("remote_api_allow_wan", allow)?.apply()
+    }
+
+    fun getRemoteAllowWan(): Boolean = prefs?.getBoolean("remote_api_allow_wan", false) ?: false
 }
