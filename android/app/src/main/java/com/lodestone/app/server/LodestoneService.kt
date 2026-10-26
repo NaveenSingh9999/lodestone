@@ -248,5 +248,3 @@ class LodestoneService : Service() {
         }
     }
 }
-KOTLIN
-echo "SERVICE REWRITTEN WITH ENGINEHOLDER"
