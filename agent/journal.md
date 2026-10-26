@@ -124,16 +124,14 @@
 - Both CI and Android workflows green on commit b84a06a (Android run 40277047424).
 - Production APK rebuilt: 13MB at /sdcard/Download/lodestone-release.apk.
 
-## 2026-10-26 — Comprehensive UI overhaul + production APK
+## 2026-10-26 — Material 3 UI complete + production APK (version 0.3.0)
 
-- Rewrote MainActivity.kt with 5-tab navigation: Dashboard, Instances, Console, Settings, Access.
-- Dashboard: shows instance status, refresh, start service button.
-- Instances: create instance (server type + version), list instances, start/stop/delete per instance.
-- Console: live output via AppState listener, command input with Send button.
-- Settings: placeholder for server settings, tuning profiles, device info.
-- Access: Bedrock crossplay toggle, remote API token display.
-- Shared AppState (SharedPreferences + in-memory buffers) for live console output and instance state.
-- EngineHolder for shared engine between activity and service.
-- Fixed LodestoneService heredoc terminator issue (was causing syntax error).
-- Both CI and Android workflows green on commit a304521 (Android run 40280803621).
-- Production APK rebuilt: 13MB at /sdcard/Download/lodestone-release.apk.
+- Rebuilt the simple Kotlin UI as a full Material 3 app: custom moss/limestone schemes (dynamic color on 12+), Scaffold + NavigationBar (Dashboard/Instances/Console/Files/Settings), CenterAlignedTopAppBar, FAB, snackbar, elevated cards, FilterChips, StateChip.
+- Functional completeness: files manager (FFI list/read/write, path-escape-proof) + text editor + server.properties editor with tuning chips; Plugins (Modrinth search -> versions -> checksum-verified install); Backups (create/restore/delete); Network (LAN join, sleep proxy, crossplay, remote API + WAN toggle); Device; About.
+- FFI additions: lodestone_list_files/read_file/write_file/install_content; InstanceSummary +work_dir, backups DTO +path; validate_rel/resolve_under/target_under helpers; 2 new FFI tests pass.
+- Service: fixed event contract (event/id/state/line vs old type/data), SleepWake auto-start on executor thread, notification summary, foreground-first.
+- Engine data dir: cacheDir -> filesDir (persistent). Created proguard-rules.pro (JNA keep rules).
+- Build: compose-bom 2024.09.03, material-icons-extended, coroutines 1.8.1; versionCode 3 / 0.3.0; manifest theme -> Theme.Material.NoActionBar.
+- CI iterations: clippy while_let_on_iterator + unused mut; Android pipefail+tee+grep e: lines; Kotlin errors fixed across 5 commits (TextStyle import, JNA EventCallback extends Callback, OptIn(ExperimentalMaterial3Api), pinned destructuring types, fillMaxWidth/withContext imports).
+- Final: Rust CI 40290326819 success, Android CI 40290326660 success on commit e3eec69; signed APK 14MB -> /sdcard/Download/lodestone-release.apk.
+- Next: optional end-to-end device testing.

@@ -1,17 +1,21 @@
 # SUMMARY — what happened while I was away
 
 ## Done (2026-10-26 run)
-- ALL SPEC SCOPE COMPLETE: M0–M5, all catalog providers, sleep proxy, remote API, FFI wiring, Android spec 5 surfaces, RCON metrics, JLI_Launch dlopen, Geyser crossplay (with UI toggle), app logo, production APK.
-- Comprehensive UI overhaul: Dashboard, Instances (create/start/stop/delete), Console (live output + commands), Settings, Access (crossplay toggle). Shared AppState for live updates.
-- EngineHolder for shared engine between activity and service.
-- 118 lib tests green, cargo fmt clean, clippy `-D warnings` clean.
-- Both GitHub CI and Android workflows green on commit a304521.
+- Material 3 UI complete: custom moss/limestone schemes (dynamic color on 12+), Scaffold + NavigationBar (Dashboard/Instances/Console/Files/Settings), CenterAlignedTopAppBar, FAB, snackbar, elevated cards.
+- Functional completeness: files manager + server.properties editor (tuning chips), Plugins (Modrinth search -> versions -> verified install), Backups (create/restore/delete), Network (LAN join, sleep proxy, crossplay, remote API + WAN toggle), Device, About.
+- FFI: lodestone_list_files/read_file/write_file/install_content (path-escape-proof), InstanceSummary +work_dir, backups DTO +path; 2 new tests pass.
+- Service: event contract fixed (event/id/state/line), SleepWake auto-start, notification summary, foreground-first. Engine data dir cacheDir -> filesDir. proguard-rules.pro created.
+- Build: compose-bom 2024.09.03, icons-extended, coroutines 1.8.1; versionCode 3 / 0.3.0; manifest theme -> NoActionBar.
+- 5 CI iterations converged to green on commit e3eec69: Rust CI 40290326819 success, Android CI 40290326660 success. Clippy -D warnings clean, fmt clean.
+- Signed release APK 14MB -> /sdcard/Download/lodestone-release.apk.
 
 ## In progress
-- Nothing half-done; commit a304521 is clean and CI-green.
+- Nothing half-done; commit e3eec69 is clean and CI-green.
 
 ## Queued next (agent/backlog.md)
-- Optional: end-to-end device testing on real Termux device (install instance, start server, verify sleep proxy wake + remote API + RCON metrics + JLI_Launch JVM hosting + Geyser crossplay).
+- Optional: end-to-end device testing (install APK, start a server, verify sleep-proxy wake + remote API + RCON + JLI_Launch JVM hosting + Geyser crossplay).
+- Optional: extend catalog (fabric/forge/neoforge) — FFI install_content already supports it.
+- Optional: verify QS tile + Glance widget on device.
 
 ## Blocked / needs human decision
 - None.

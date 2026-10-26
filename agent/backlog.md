@@ -28,6 +28,8 @@ DONE: App logo — /sdcard/Download/logo.svg converted to mipmap PNGs at all den
 
 REMAINING: Optional end-to-end device testing on real Termux device.
 
+DONE: Material 3 UI overhaul — files manager, server.properties editor, plugins, backups, network, device, about; FFI file ops + content install; service event fix; proguard; CI green. Production APK (14MB, v0.3.0) at /sdcard/Download/lodestone-release.apk.
+
 DONE: Comprehensive UI — Dashboard, Instances, Console, Settings, Access screens with instance creation, start/stop, console commands, live state updates via AppState. Production APK rebuilt: 13MB at /sdcard/Download/lodestone-release.apk.
 
 DONE: Error handling for silent crashes — try-catch in MainActivity and LodestoneService, error display in UI, notification icon (ic_notification drawable). Production APK rebuilt: 13MB at /sdcard/Download/lodestone-release.apk.

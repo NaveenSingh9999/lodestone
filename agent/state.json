@@ -1,38 +1,35 @@
 {
   "goal": "Complete Lodestone (Android-first Minecraft Java server manager per lodestone.md) — all spec scope (M0–M5 + extras) implemented and CI-green.",
-  "state": "ALL SPEC SCOPE COMPLETE + PRODUCTION APK BUILT AND SIGNED. Comprehensive UI: Dashboard, Instances, Console, Settings, Access screens with instance creation, start/stop, console commands, live state updates via AppState. 118 lib tests green. CI + Android workflows green. Release APK (13MB, signed) at /sdcard/Download/lodestone-release.apk.",
+  "state": "Material 3 UI complete. Rust FFI + Kotlin Android both CI-green on commit e3eec69. Signed release APK (14MB, versionCode 3, 0.3.0) copied to /sdcard/Download/lodestone-release.apk.",
   "last_actions": [
-    "Comprehensive UI overhaul: Dashboard (instance status, start/stop all), Instances (create with server type + version, list, start/stop/delete), Console (live output, command input), Settings, Access (crossplay toggle, remote API token)",
-    "Shared AppState with live console output buffer and instance state tracking",
-    "EngineHolder for shared engine between activity and service",
-    "Fixed LodestoneService heredoc terminator issue",
-    "Both CI and Android workflows green on commit a304521 (Android run 40280803621)"
-  ],
-  "extras": [
-    "config (ServerProperties + TuningProfile, paper YAML, apply_to_instance)",
-    "backup (tar.gz + sha256 sidecar, create/list/verify/restore/export/delete)",
-    "content (Modrinth v2, sha1/sha512/MD5 gate-first, api.modrinth.com + cdn)",
-    "schedule (cron parser, Hinnant civil calendar, IdleTracker)",
-    "crash analysis (exception extraction, remedy_for map)",
-    "tunnel manager (playit fallback, daemon process control, address parse)",
-    "sleep proxy (spec 4.12): MC status/login protocol, wake hook, PROXY v1, IdleTracker",
-    "remote API (spec 4.13): HTTP+WS, bearer auth, attempt lockout, LAN-only",
-    "catalog providers (4.1): vanilla, paper, purpur, fabric, quilt, forge, neoforge — all live-API verified + checksum-gated",
-    "Android spec 5: notification status + start/stop actions, QS tile, Glance widget, StateStore shared state",
-    "Android service lifecycle: remote API on 127.0.0.1:7300, sleep proxy auto-starts/stops with instance state",
-    "RCON metrics (4.3 depth): Source RCON client + MetricsCollector + InstanceRunner callback",
-    "JLI_Launch dlopen (spec §5 depth): AndroidPlatform hosts JVM via dlopen(libjli.so)+JLI_Launch with piped stdio, wired into FFI via cfg, 3 tests",
-    "Geyser/Bedrock crossplay (4.11 optional): crossplay.rs + AccessScreen toggle + NativeBridge binding, 7 tests",
-    "App logo: /sdcard/Download/Apple-Symbols-Font/ PNG converted to mipmap icons at all densities",
-    "Production APK: 13MB signed release build with keystore (pass: lodestone123, alias: lodestone)",
-    "Comprehensive UI: Dashboard, Instances, Console, Settings, Access screens with instance creation, start/stop, console commands",
-    "Crash fix: added res/values/strings.xml + colors.xml, error handling in MainActivity/LodestoneService, notification icon (ic_notification drawable)"
+    "Material 3 rebuild: custom moss/limestone schemes (dynamic color on 12+), Scaffold + NavigationBar (Dashboard/Instances/Console/Files/Settings), CenterAlignedTopAppBar, FAB, snackbar, elevated cards, FilterChips, StateChip",
+    "Files manager: FFI list_files/read_file/write_file (path-escape-proof) + file browser + text editor + server.properties editor with tuning chips",
+    "Plugins: Modrinth search -> versions -> checksum-verified install (lodestone_install_content) into plugins/mods dirs",
+    "Backups: create/restore/delete UI over lodestone_create/list/restore/delete_backup; path returned in DTO",
+    "Network: LAN join address, sleep proxy, crossplay toggle, remote API with WAN toggle + token copy",
+    "Service: fixed event contract (event/id/state/line), SleepWake auto-start on executor thread, notification summary, foreground-first",
+    "Engine data dir: cacheDir -> filesDir (persistent runtimes/backups/instances)",
+    "Created proguard-rules.pro (JNA keep rules; minify was on without it)",
+    "CI fixes: Android pipefail+tee+grep e: lines; Rust clippy while_let_on_iterator + unused mut; Kotlin TextStyle import, JNA EventCallback extends Callback, OptIn(ExperimentalMaterial3Api), pinned destructuring types, fillMaxWidth/withContext imports",
+    "FFI: InstanceSummary gained work_dir; backups DTO gained path; 2 new FFI tests pass; clippy -D warnings clean",
+    "Gradle: compose-bom 2024.09.03, material-icons-extended, coroutines 1.8.1; versionCode 3, versionName 0.3.0; manifest theme -> Theme.Material.NoActionBar"
   ],
   "next": [
-    "Optional: end-to-end device testing on real Termux device"
+    "Optional: end-to-end device testing on real Termux device (install /sdcard/Download/lodestone-release.apk)",
+    "Optional: extend catalog to fabric/forge/neoforge (FFI already supports install_content)",
+    "Optional: QS tile/widget wiring verification on device"
   ],
   "blocked": [],
   "milestone": "all",
-  "test_policy": "cargo check per delta; RUST_TEST_THREADS=1 module-filtered lib tests only at milestones; heavy E2E gated by user; verify via gh run watch after push",
-  "ci": "https://github.com/NaveenSingh9999/lodestone/actions"
+  "test_policy": "cargo check per delta; RUST_TEST_THREADS=1 module-filtered lib tests only at milestones; verify via gh run watch after push",
+  "ci": "https://github.com/NaveenSingh9999/lodestone/actions",
+  "latest_commits": ["e3eec69", "15b8385", "7e44161", "892b598", "becb41c"],
+  "apks": ["/sdcard/Download/lodestone-release.apk (14MB, versionCode 3, signed)"],
+  "verification": {
+    "rust_ci": "40290326819 completed success (e3eec69)",
+    "android_ci": "40290326660 completed success (e3eec69)",
+    "ffi_tests": "2 passed (rel_paths_reject_traversal, list_write_read_roundtrip)",
+    "clippy": "clean with -D warnings",
+    "fmt": "clean"
+  }
 }
