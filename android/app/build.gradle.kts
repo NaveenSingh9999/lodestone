@@ -7,17 +7,26 @@ plugins {
 android {
     namespace = "com.lodestone.app"
     compileSdk = 34
+    signingConfigs {
+        create("release") {
+            storeFile = file("lodestone.keystore")
+            storePassword = "lodestone123"
+            keyAlias = "lodestone"
+            keyPassword = "lodestone123"
+        }
+    }
     defaultConfig {
         applicationId = "com.lodestone.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
         ndk { abiFilters += "arm64-v8a" }
     }
     buildTypes {
         release {
-            isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
