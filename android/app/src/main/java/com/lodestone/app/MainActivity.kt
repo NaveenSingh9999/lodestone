@@ -15,35 +15,38 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.lodestone.app.native.NativeBridge
 import com.lodestone.app.server.LodestoneService
-import com.lodestone.app.state.StateStore
+import com.lodestone.app.state.AppState
+import com.lodestone.app.state.EngineHolder
 import org.json.JSONArray
 import org.json.JSONObject
 import com.sun.jna.Pointer
 
 class MainActivity : ComponentActivity() {
-    private var engine: Pointer? = null
-    private var initError: String? = null
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        try {
-            engine = NativeBridge.engineNew(cacheDir.absolutePath)
-        } catch (e: Throwable) {
-            android.util.Log.e("Lodestone", "Engine creation failed", e)
-            initError = "${e.javaClass.simpleName}: ${e.message}"
+        AppState.init(this)
+
+        // Create engine if not already created (shared with service via EngineHolder)
+        if (EngineHolder.engine == null) {
+            try {
+                EngineHolder.engine = NativeBridge.engineNew(cacheDir.absolutePath)
+            } catch (e: Throwable) {
+                android.util.Log.e("Lodestone", "Engine creation failed", e)
+                EngineHolder.initError = "${e.javaClass.simpleName}: ${e.message}"
+            }
         }
+
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    LodestoneApp(engine = engine, initError = initError)
+                    LodestoneApp(engine = EngineHolder.engine, initError = EngineHolder.initError)
                 }
             }
         }
     }
 
     override fun onDestroy() {
-        engine?.let { NativeBridge.engineFree(it) }
-        engine = null
+        // Don't free engine - it's shared via EngineHolder
         super.onDestroy()
     }
 }
@@ -54,18 +57,15 @@ fun LodestoneApp(engine: Pointer?, initError: String?) {
     val tabs = listOf("Dashboard", "Instances", "Console", "Settings", "Access")
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Tab row
         ScrollableTabRow(selectedTabIndex = selectedTab, edgePadding = 8.dp) {
             tabs.forEachIndexed { index, title ->
                 Tab(selected = selectedTab == index, onClick = { selectedTab = index }) {
-                    Text(title, modifier = Modifier.padding(8.dp))
+                    Text(title, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
                 }
             }
         }
-
-        // Content
         when (selectedTab) {
-            0 -> DashboardScreen(engine)
+            0 -> DashboardScreen(engine, initError)
             1 -> InstancesScreen(engine)
             2 -> ConsoleScreen(engine)
             3 -> SettingsScreen(engine)
@@ -75,61 +75,70 @@ fun LodestoneApp(engine: Pointer?, initError: String?) {
 }
 
 @Composable
-fun DashboardScreen(engine: Pointer?) {
+fun DashboardScreen(engine: Pointer?, initError: String?) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     var status by remember { mutableStateOf("idle") }
-    var instances by remember { mutableStateOf<List<String>>(emptyList()) }
+    val states = remember { mutableStateOf(AppState.snapshot()) }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Dashboard", style = MaterialTheme.typography.headlineMedium)
-        if (initError != null) {
-            Text("Error: $initError", modifier = Modifier.padding(top = 8.dp))
+    val listener = remember { { type: String, data: String ->
+        if (type == "StateChanged") {
+            states.value = AppState.snapshot()
         }
-        Text("Status: $status", modifier = Modifier.padding(top = 8.dp))
+    } }
 
-        // Instance status
-        val states = StateStore.snapshot()
-        if (states.isNotEmpty()) {
-            states.forEach { (id, state) ->
-                Text("$id: $state", modifier = Modifier.padding(top = 4.dp))
+    DisposableEffect(Unit) {
+        AppState.addListener(listener)
+        onDispose { AppState.removeListener(listener) }
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            states.value = AppState.snapshot()
+            kotlinx.coroutines.delay(1000)
+        }
+    }
+
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        item {
+            Text("Dashboard", style = MaterialTheme.typography.headlineMedium)
+            if (initError != null) {
+                Text("Engine error: $initError", modifier = Modifier.padding(top = 8.dp))
             }
-        } else {
-            Text("No instances. Create one in the Instances tab.", modifier = Modifier.padding(top = 8.dp))
-        }
+            Text("Status: $status", modifier = Modifier.padding(top = 8.dp))
 
-        // Buttons
-        Row(modifier = Modifier.padding(top = 16.dp)) {
-            Button(onClick = {
-                engine?.let { e ->
-                    val listJson = NativeBridge.listInstances(e)
-                    if (listJson != null) {
-                        try {
-                            val arr = JSONArray(listJson)
-                            val ids = mutableListOf<String>()
-                            for (i in 0 until arr.length()) {
-                                ids.add(arr.getJSONObject(i).getString("id"))
+            if (states.value.isNotEmpty()) {
+                states.value.forEach { (id, state) ->
+                    Text("$id: $state", modifier = Modifier.padding(top = 4.dp))
+                }
+            } else {
+                Text("No instances. Create one in the Instances tab.", modifier = Modifier.padding(top = 8.dp))
+            }
+
+            Row(modifier = Modifier.padding(top = 16.dp)) {
+                Button(onClick = {
+                    engine?.let { e ->
+                        val listJson = NativeBridge.listInstances(e)
+                        if (listJson != null) {
+                            try {
+                                val arr = JSONArray(listJson)
+                                status = "found ${arr.length()} instances"
+                            } catch (ex: Exception) {
+                                status = "error: ${ex.message}"
                             }
-                            instances = ids
-                            status = "found ${ids.size} instances"
-                        } catch (ex: Exception) {
-                            status = "error: ${ex.message}"
+                        } else {
+                            status = "no instances"
                         }
-                    } else {
-                        status = "no instances"
-                    }
-                } ?: run { status = "engine null" }
-            }) {
-                Text("Refresh")
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Button(onClick = {
-                val intent = android.content.Intent(
-                    androidx.core.content.ContextCompat.getSystemService(
-                        /* context */ null, android.content.Context::class.java
-                    ) as? android.content.Context ?: return@Button,
-                    com.lodestone.app.server.LodestoneService::class.java
-                )
-            }) {
-                Text("Start Service")
+                    } ?: run { status = "engine null" }
+                }) {
+                    Text("Refresh")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = {
+                    context.startForegroundService(Intent(context, com.lodestone.app.server.LodestoneService::class.java))
+                    status = "service started"
+                }) {
+                    Text("Start Service")
+                }
             }
         }
     }
@@ -139,7 +148,7 @@ fun DashboardScreen(engine: Pointer?) {
 fun InstancesScreen(engine: Pointer?) {
     var serverType by remember { mutableStateOf("paper") }
     var version by remember { mutableStateOf("") }
-    var instances by remember { mutableStateOf<List<org.json.JSONObject>>(emptyList()) }
+    var instances by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     var status by remember { mutableStateOf("") }
 
     LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -147,10 +156,9 @@ fun InstancesScreen(engine: Pointer?) {
             Text("Instance Manager", style = MaterialTheme.typography.headlineMedium)
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Server type selector
             Text("Server Type:")
             Row(modifier = Modifier.padding(top = 4.dp)) {
-                listOf("paper", "fabric", "vanilla", "forge").forEach { type ->
+                listOf("paper", "fabric", "vanilla", "forge", "neoforge", "quilt", "purpur", "folia").forEach { type ->
                     Button(
                         onClick = { serverType = type },
                         modifier = Modifier.padding(end = 4.dp),
@@ -161,7 +169,6 @@ fun InstancesScreen(engine: Pointer?) {
                 }
             }
 
-            // Version input
             OutlinedTextField(
                 value = version,
                 onValueChange = { version = it },
@@ -169,18 +176,18 @@ fun InstancesScreen(engine: Pointer?) {
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
 
-            // Create instance button
             Button(onClick = {
                 engine?.let { e ->
                     if (version.isNotEmpty()) {
-                        val spec = org.json.JSONObject().apply {
-                            put("id", "instance-${System.currentTimeMillis()}")
+                        val ts = System.currentTimeMillis()
+                        val spec = JSONObject().apply {
+                            put("id", "inst-$ts")
                             put("server_type", serverType)
                             put("version", version)
-                            put("work_dir", "/data/data/com.lodestone.app/files/instances/instance-${System.currentTimeMillis()}")
+                            put("work_dir", "/data/data/com.lodestone.app/files/instances/inst-$ts")
                         }
                         val rc = NativeBridge.createInstance(e, spec.toString())
-                        status = if (rc == 0) "Created!" else "Failed (rc=$rc)"
+                        status = if (rc == 0) "Created! Go to Dashboard and refresh." else "Failed (rc=$rc)"
                     } else {
                         status = "Enter a version"
                     }
@@ -191,11 +198,9 @@ fun InstancesScreen(engine: Pointer?) {
 
             Text(status, modifier = Modifier.padding(top = 8.dp))
 
-            // List instances
             Text("Instances:", modifier = Modifier.padding(top = 16.dp))
         }
 
-        // Refresh instances
         item {
             Button(onClick = {
                 engine?.let { e ->
@@ -203,14 +208,12 @@ fun InstancesScreen(engine: Pointer?) {
                     if (listJson != null) {
                         try {
                             val arr = JSONArray(listJson)
-                            val list = mutableListOf<org.json.JSONObject>()
+                            val list = mutableListOf<JSONObject>()
                             for (i in 0 until arr.length()) {
                                 list.add(arr.getJSONObject(i))
                             }
                             instances = list
-                        } catch (ex: Exception) {
-                            // ignore
-                        }
+                        } catch (ex: Exception) { }
                     }
                 }
             }) {
@@ -222,9 +225,10 @@ fun InstancesScreen(engine: Pointer?) {
             val id = inst.getString("id")
             val state = inst.getString("state")
             val st = inst.getString("server_type")
+            val ver = inst.getString("version")
             Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Text("$id ($st) - $state")
+                    Text("$id ($st $ver) - $state")
                     Row(modifier = Modifier.padding(top = 8.dp)) {
                         Button(onClick = {
                             engine?.let { e -> NativeBridge.start(e, id) }
@@ -246,8 +250,26 @@ fun InstancesScreen(engine: Pointer?) {
 
 @Composable
 fun ConsoleScreen(engine: Pointer?) {
-    var consoleOutput by remember { mutableStateOf("") }
+    var consoleOutput by remember { mutableStateOf(AppState.getConsoleOutput()) }
     var command by remember { mutableStateOf("") }
+
+    val listener = remember { { type: String, data: String ->
+        if (type == "ConsoleLine") {
+            consoleOutput = AppState.getConsoleOutput()
+        }
+    } }
+
+    DisposableEffect(Unit) {
+        AppState.addListener(listener)
+        onDispose { AppState.removeListener(listener) }
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            consoleOutput = AppState.getConsoleOutput()
+            kotlinx.coroutines.delay(500)
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text("Console", style = MaterialTheme.typography.headlineMedium)
@@ -270,7 +292,6 @@ fun ConsoleScreen(engine: Pointer?) {
             )
             Spacer(modifier = Modifier.width(8.dp))
             Button(onClick = {
-                // Send command to first instance
                 engine?.let { e ->
                     val listJson = NativeBridge.listInstances(e)
                     if (listJson != null) {
@@ -279,7 +300,7 @@ fun ConsoleScreen(engine: Pointer?) {
                             if (arr.length() > 0) {
                                 val id = arr.getJSONObject(0).getString("id")
                                 NativeBridge.sendConsole(e, id, command)
-                                consoleOutput += "> $command\n"
+                                AppState.appendConsole("> $command")
                                 command = ""
                             }
                         } catch (ex: Exception) { }
@@ -343,7 +364,7 @@ fun AccessScreen(engine: Pointer?) {
         )
         Text(status, modifier = Modifier.padding(top = 8.dp))
 
-        val token = StateStore.snapshot()["remote_api_token"]
+        val token = AppState.getRemoteToken()
         if (token != null) {
             Text("Remote API token: $token", modifier = Modifier.padding(top = 16.dp))
         }
