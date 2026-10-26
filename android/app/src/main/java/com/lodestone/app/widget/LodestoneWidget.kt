@@ -21,7 +21,3 @@ class LodestoneWidget : GlanceAppWidget() {
         }
     }
 }
-
-class LodestoneWidgetReceiver : GlanceAppWidgetReceiver() {
-    override val glanceAppWidget: GlanceAppWidget = LodestoneWidget()
-}
