@@ -29,7 +29,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        engine = NativeBridge.engineNew(cacheDir.absolutePath)
+        try {
+            engine = NativeBridge.engineNew(cacheDir.absolutePath)
+        } catch (e: Exception) {
+            android.util.Log.e("Lodestone", "Engine creation failed", e)
+        }
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {

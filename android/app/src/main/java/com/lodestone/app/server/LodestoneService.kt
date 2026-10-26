@@ -17,7 +17,13 @@ import org.json.JSONObject
 
 class LodestoneService : Service() {
     companion object {
-        init { System.loadLibrary("lodestone_ffi") }
+        init {
+            try {
+                System.loadLibrary("lodestone_ffi")
+            } catch (e: UnsatisfiedLinkError) {
+                android.util.Log.e("Lodestone", "Failed to load native library", e)
+            }
+        }
         const val CHANNEL_ID = "lodestone_server"
         const val NOTIF_ID = 1
         const val ACTION_START_ALL = "com.lodestone.app.ACTION_START_ALL"
